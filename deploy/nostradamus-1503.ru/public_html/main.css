@@ -133,7 +133,6 @@ body {
   width: var(--logo-size, clamp(220px, 28vw, 360px));
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 0 28px rgba(229, 57, 53, 0.35));
 }
 
 .home-title {

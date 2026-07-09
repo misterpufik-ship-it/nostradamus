@@ -15,7 +15,7 @@ function default_homepage_config(): array
         'background_type' => 'color',
         'background_color' => '#000000',
         'background' => '',
-        'footerBackground' => 'assets/ai-nostradamus-right-corner.png',
+        'footerBackground' => '',
         'title' => [
             'main' => 'Сервисы для работы',
             'accent' => 'с маркетплейсами',
@@ -134,7 +134,7 @@ $services = is_array($config['services'] ?? null) ? $config['services'] : [];
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="main.css?v=2026071005" />
+    <link rel="stylesheet" href="main.css?v=2026071006" />
     <style>
       :root {
         --font-size-title: <?= $fontTitle ?>;
