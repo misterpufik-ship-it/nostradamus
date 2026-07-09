@@ -19,8 +19,12 @@ __pycache__/
 *.mp4
 !obuchenie/site_ex2/assets/video.mp4
 
-# Nostradamus admin secrets
+# Nostradamus admin secrets and live CMS data (only on server)
 deploy/nostradamus-1503.ru/public_html/admin/config/auth.php
+deploy/nostradamus-1503.ru/public_html/admin/data/homepage.json
+deploy/nostradamus-1503.ru/public_html/admin/uploads/*
+!deploy/nostradamus-1503.ru/public_html/admin/uploads/.gitkeep
+!deploy/nostradamus-1503.ru/public_html/admin/uploads/.htaccess
 deploy/nostradamus-1503.ru/public_html/sklad/config/db.php
 
 # Node / OS

@@ -49,6 +49,8 @@ return [
 
 Данные хранятся в `admin/data/homepage.json`. Загруженные файлы — в `admin/uploads/`.
 
+**Важно:** `homepage.json` и загрузки из админки живут только на сервере и **не перезаписываются** при деплое (`scripts/deploy-nostradamus.ps1`). В git лежит только шаблон `homepage.example.json`.
+
 ## Архитектура
 
 ```text

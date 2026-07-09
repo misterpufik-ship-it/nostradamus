@@ -84,8 +84,8 @@ function homepage_path(): string
 function default_homepage(): array
 {
     return [
-        'logo' => 'assets/ai-nostradamus-logo.png',
-        'logoSize' => 'clamp(220px, 28vw, 360px)',
+        'logo' => 'assets/ai-solutions-nostradamus-logo.png',
+        'logoSize' => 'clamp(260px, 42vw, 520px)',
         'background_type' => 'color',
         'background_color' => '#000000',
         'background' => '',

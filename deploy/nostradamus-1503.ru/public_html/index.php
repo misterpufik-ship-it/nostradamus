@@ -10,8 +10,8 @@ function homepage_config_path(): string
 function default_homepage_config(): array
 {
     return [
-        'logo' => 'assets/ai-nostradamus-logo.png',
-        'logoSize' => 'clamp(220px, 28vw, 360px)',
+        'logo' => 'assets/ai-solutions-nostradamus-logo.png',
+        'logoSize' => 'clamp(260px, 42vw, 520px)',
         'background_type' => 'color',
         'background_color' => '#000000',
         'background' => '',
@@ -111,7 +111,7 @@ $config = load_homepage_config();
 $titleMain = e((string) ($config['title']['main'] ?? ''));
 $titleAccent = e((string) ($config['title']['accent'] ?? ''));
 $subtitle = e((string) ($config['subtitle'] ?? ''));
-$logo = e((string) ($config['logo'] ?? 'assets/ai-nostradamus-logo.png'));
+$logo = e((string) ($config['logo'] ?? 'assets/ai-solutions-nostradamus-logo.png'));
 $backgroundType = ($config['background_type'] ?? 'color') === 'image' ? 'image' : 'color';
 $backgroundColor = e(normalize_homepage_hex_color((string) ($config['background_color'] ?? '#000000')));
 $background = trim((string) ($config['background'] ?? ''));
