@@ -89,7 +89,7 @@ function default_homepage(): array
         'background_type' => 'color',
         'background_color' => '#000000',
         'background' => '',
-        'footerBackground' => '',
+        'footerBackground' => 'assets/ai-nostradamus-right-corner.png',
         'title' => [
             'main' => 'Сервисы для работы',
             'accent' => 'с маркетплейсами',

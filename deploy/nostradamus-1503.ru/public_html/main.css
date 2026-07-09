@@ -83,6 +83,28 @@ body {
   background-color: var(--bg);
   font-family: var(--font);
   line-height: 1.4;
+  overflow-x: hidden;
+}
+
+.home-footer-deco {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  transform: scale(0.3333333333);
+  transform-origin: 100% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-footer-deco {
+    transform: scale(0.3333333333);
+  }
 }
 
 .home {

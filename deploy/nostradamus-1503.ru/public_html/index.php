@@ -15,7 +15,7 @@ function default_homepage_config(): array
         'background_type' => 'color',
         'background_color' => '#000000',
         'background' => '',
-        'footerBackground' => '',
+        'footerBackground' => 'assets/ai-nostradamus-right-corner.png',
         'title' => [
             'main' => 'Сервисы для работы',
             'accent' => 'с маркетплейсами',
@@ -115,6 +115,7 @@ $logo = e((string) ($config['logo'] ?? 'assets/ai-nostradamus-logo.png'));
 $backgroundType = ($config['background_type'] ?? 'color') === 'image' ? 'image' : 'color';
 $backgroundColor = e(normalize_homepage_hex_color((string) ($config['background_color'] ?? '#000000')));
 $background = trim((string) ($config['background'] ?? ''));
+$footerBackground = trim((string) ($config['footerBackground'] ?? ''));
 $fontTitle = e((string) ($config['fontSizes']['title'] ?? 'clamp(28px, 4.5vw, 52px)'));
 $fontSubtitle = e((string) ($config['fontSizes']['subtitle'] ?? 'clamp(15px, 2vw, 18px)'));
 $fontButton = e((string) ($config['fontSizes']['button'] ?? 'clamp(16px, 2.2vw, 20px)'));
@@ -133,7 +134,7 @@ $services = is_array($config['services'] ?? null) ? $config['services'] : [];
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="main.css?v=2026071004" />
+    <link rel="stylesheet" href="main.css?v=2026071005" />
     <style>
       :root {
         --font-size-title: <?= $fontTitle ?>;
@@ -159,6 +160,16 @@ $services = is_array($config['services'] ?? null) ? $config['services'] : [];
     </style>
   </head>
   <body>
+    <?php if ($footerBackground !== ''): ?>
+    <img
+      class="home-footer-deco"
+      src="<?= e($footerBackground) ?>"
+      alt=""
+      aria-hidden="true"
+      width="1200"
+      height="450"
+    />
+    <?php endif; ?>
     <main class="home">
       <header class="home-header">
         <img

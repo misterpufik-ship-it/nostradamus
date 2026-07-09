@@ -131,9 +131,12 @@ body {
 
 .preview-footer {
   width: min(100%, 420px);
-  height: 48px;
-  object-fit: cover;
-  object-position: center bottom;
+  height: auto;
+  max-height: 80px;
+  object-fit: contain;
+  object-position: right bottom;
+  transform: scale(0.3333333333);
+  transform-origin: 100% 100%;
 }
 
 .bg-mode-toggle {
