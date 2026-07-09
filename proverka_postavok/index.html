@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nostradamus | Контроль поставок</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <header class="panel-header">
+          <a class="back-link" href="../">← Сервисы</a>
+          <p class="eyebrow">Nostradamus</p>
+          <h1>Контроль поставок</h1>
+          <p class="lead">Добавьте поставку, отметьте пункты и сохраните. После сохранения редактирование недоступно.</p>
+        </header>
+
+        <form class="delivery-form" id="delivery-form">
+          <div class="field-row">
+            <label>
+              Номер поставки
+              <input id="delivery-number" type="text" required autocomplete="off" placeholder="Например, 32847192" />
+            </label>
+            <label>
+              Склад
+              <input id="warehouse" type="text" required autocomplete="off" placeholder="Например, Казань" />
+            </label>
+          </div>
+
+          <fieldset class="checks-fieldset">
+            <legend>Проверка</legend>
+            <div class="checks-grid" id="checks-grid"></div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Сохранить</button>
+          </div>
+          <p class="status" id="form-status" data-tone="info">Заполните поля и нажмите «Сохранить».</p>
+        </form>
+
+        <section class="saved-section" aria-label="Сохранённые поставки">
+          <div class="saved-header">
+            <h2>Сохранённые поставки</h2>
+            <span class="saved-count" id="saved-count">0</span>
+          </div>
+          <div class="month-tabs" id="month-tabs" role="tablist" aria-label="Месяцы"></div>
+          <div class="saved-groups" id="saved-groups"></div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

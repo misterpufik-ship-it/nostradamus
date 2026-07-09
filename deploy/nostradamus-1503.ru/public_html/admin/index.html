@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Админка | Nostradamus Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/admin.css?v=2026071004" />
+  </head>
+  <body>
+    <section id="login-view" class="login-wrap hidden">
+      <div class="panel login-card">
+        <h1>Вход в админку</h1>
+        <p style="color: var(--muted); margin: 0 0 20px">Nostradamus Hub — управление главной страницей</p>
+        <form id="login-form">
+          <div class="field">
+            <label for="password">Пароль</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+          </div>
+          <button class="btn btn-primary" type="submit">Войти</button>
+        </form>
+        <div id="login-status" class="status"></div>
+      </div>
+    </section>
+
+    <div id="dashboard-view" class="admin-shell hidden">
+      <header class="admin-header">
+        <div>
+          <h1>Главная страница</h1>
+          <p>Редактирование контента hub-сайта</p>
+        </div>
+        <div class="actions">
+          <a class="btn btn-ghost" href="../" target="_blank" rel="noopener">Открыть сайт</a>
+          <button id="logout-btn" class="btn" type="button">Выйти</button>
+        </div>
+      </header>
+
+      <form id="homepage-form">
+        <section class="panel">
+          <h2>Изображения</h2>
+          <div class="field">
+            <label>Логотип</label>
+            <div class="upload-row">
+              <img id="logo-preview" class="preview preview-logo" alt="Логотип" />
+              <input id="logo-upload" type="file" accept="image/*" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="logo-size">Размер логотипа (CSS)</label>
+            <input
+              id="logo-size"
+              name="logoSize"
+              type="text"
+              placeholder="clamp(220px, 28vw, 360px)"
+            />
+            <p class="field-hint">Например: 280px или clamp(200px, 25vw, 360px)</p>
+          </div>
+          <div class="field">
+            <label>Фон</label>
+            <div class="bg-mode-toggle" role="radiogroup" aria-label="Тип фона">
+              <label class="bg-mode-option">
+                <input type="radio" name="backgroundType" id="background-type-color" value="color" checked />
+                Цвет
+              </label>
+              <label class="bg-mode-option">
+                <input type="radio" name="backgroundType" id="background-type-image" value="image" />
+                Изображение
+              </label>
+            </div>
+          </div>
+          <div id="background-color-field" class="field">
+            <label for="background-color">Цвет фона</label>
+            <div class="color-row">
+              <input id="background-color" type="color" value="#000000" />
+              <input id="background-color-hex" type="text" value="#000000" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$" />
+              <div id="background-color-preview" class="preview preview-bg" aria-hidden="true"></div>
+            </div>
+          </div>
+          <div id="background-image-field" class="field hidden">
+            <label for="background-upload">Изображение фона</label>
+            <div class="upload-row">
+              <img id="background-preview" class="preview preview-bg" alt="Фон" />
+              <input id="background-upload" type="file" accept="image/*" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="footer-upload">Декор внизу страницы</label>
+            <div class="upload-row">
+              <img id="footer-preview" class="preview preview-footer" alt="Декор внизу" />
+              <input id="footer-upload" type="file" accept="image/*" />
+            </div>
+            <p class="field-hint">Широкая полоска внизу экрана. Кнопки не перекрываются.</p>
+            <button id="footer-clear" class="btn btn-ghost" type="button">Убрать декор</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Тексты</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="title-main">Заголовок</label>
+              <input id="title-main" name="titleMain" type="text" required />
+            </div>
+            <div class="field">
+              <label for="title-accent">Акцент в заголовке</label>
+              <input id="title-accent" name="titleAccent" type="text" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="subtitle">Подзаголовок</label>
+            <input id="subtitle" name="subtitle" type="text" required />
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Размеры шрифтов (CSS)</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="font-title">Заголовок</label>
+              <input id="font-title" name="fontTitle" type="text" placeholder="clamp(28px, 4.5vw, 52px)" />
+            </div>
+            <div class="field">
+              <label for="font-subtitle">Подзаголовок</label>
+              <input id="font-subtitle" name="fontSubtitle" type="text" placeholder="clamp(15px, 2vw, 18px)" />
+            </div>
+            <div class="field">
+              <label for="font-button">Кнопки</label>
+              <input id="font-button" name="fontButton" type="text" placeholder="clamp(16px, 2.2vw, 20px)" />
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Кнопки сервисов</h2>
+          <div id="services-list"></div>
+        </section>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">Сохранить изменения</button>
+        </div>
+        <div id="save-status" class="status"></div>
+      </form>
+    </div>
+
+    <script src="js/admin.js?v=2026071004"></script>
+  </body>
+</html>

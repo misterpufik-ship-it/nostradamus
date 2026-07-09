@@ -1,0 +1,4 @@
+RewriteEngine On
+RewriteBase /obuchenie/builder/
+RewriteCond %{REQUEST_URI} !/proxy\.php$
+RewriteRule ^ proxy.php [QSA,L]

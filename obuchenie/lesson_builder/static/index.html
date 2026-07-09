@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Разработка урока — X-active</title>
+    <link rel="stylesheet" href="static/builder.css?v=20260704g" />
+  </head>
+  <body>
+    <div class="app" id="app-shell">
+      <aside class="sidebar" id="sidebar" aria-label="Проекты">
+        <div class="sidebar-top">
+          <div class="brand">
+            <div class="brand-mark">XA</div>
+            <div>
+              <p class="eyebrow">Инструмент</p>
+              <h1>Разработка урока</h1>
+            </div>
+          </div>
+          <button class="sidebar-collapse" id="sidebar-toggle" type="button" aria-expanded="true" aria-controls="sidebar" title="Свернуть меню">
+            <span aria-hidden="true">‹</span>
+          </button>
+        </div>
+
+        <div class="sidebar-scroll">
+          <nav class="workspace-switch" aria-label="Раздел конструктора">
+            <button class="workspace-btn is-active" type="button" data-workspace="lessons">Уроки</button>
+            <button class="workspace-btn" type="button" data-workspace="regulations">Регламенты</button>
+            <button class="workspace-btn hidden" type="button" data-workspace="users" id="workspace-users-btn">Пользователи</button>
+          </nav>
+
+          <div class="auth-user-card" id="auth-user"></div>
+          <button class="ghost-btn auth-logout-btn" id="logout-btn" type="button">Выйти</button>
+
+          <a class="back-link" id="site-home-link" href="https://nostradamus-1503.ru/obuchenie/" target="_blank" rel="noreferrer">← Учебный центр</a>
+
+          <button class="primary-btn" id="new-project" type="button">+ Новый проект</button>
+
+          <div class="project-list-wrap">
+            <p class="section-label">Проекты</p>
+            <div class="project-list" id="project-list"></div>
+          </div>
+
+          <div class="hint-card">
+            <strong>Как работает</strong>
+            <p>+ Шаг → скриншот (+ Скриншот или Ctrl+V) → разметка → «Добавить в учебную базу». Видео необязательно.</p>
+          </div>
+        </div>
+      </aside>
+
+      <button class="sidebar-restore" id="sidebar-restore" type="button" aria-label="Показать меню" title="Показать меню">
+        <span aria-hidden="true">›</span>
+      </button>
+
+      <main class="workspace" id="workspace" tabindex="0">
+        <section class="empty-state" id="empty-state">
+          <h2>Выберите или создайте проект</h2>
+          <p>Выберите проект слева или создайте новый. Проекты сохраняются на сервере конструктора.</p>
+        </section>
+
+        <section class="editor hidden" id="editor">
+          <header class="editor-header">
+            <div>
+              <p class="eyebrow" id="project-topic">Тема</p>
+              <input class="title-input" id="project-title" type="text" placeholder="Название урока" />
+            </div>
+            <div class="header-actions">
+              <button class="secondary-btn" id="save-project" type="button">Сохранить</button>
+              <button class="primary-btn" id="publish-project" type="button">Добавить в учебную базу</button>
+              <button class="danger-btn hidden" id="unpublish-project" type="button">Удалить из учебной базы</button>
+              <button class="ghost-btn" id="export-html" type="button">HTML</button>
+              <button class="ghost-btn" id="export-pdf" type="button">PDF</button>
+              <button class="ghost-btn" id="export-snippet" type="button">Фрагмент</button>
+            </div>
+          </header>
+
+          <div class="meta-grid">
+            <label>Тема<input id="field-topic" type="text" /></label>
+            <label>Роль<input id="field-role" type="text" /></label>
+            <label>Длительность<input id="field-duration" type="text" placeholder="15-20 минут" /></label>
+            <label class="span-3">Описание<textarea id="field-description" rows="2"></textarea></label>
+            <label>Примечание к видео<textarea id="field-video-note" rows="2"></textarea></label>
+            <label class="span-2">Ключевые слова (через запятую)<input id="field-keywords" type="text" /></label>
+            <label>Чеклист (по строке)<textarea id="field-checklist" rows="2"></textarea></label>
+            <label class="span-2">Типичные ошибки (заголовок | текст, по строке)<textarea id="field-issues" rows="2"></textarea></label>
+            <label class="span-3">Регламенты урока
+              <div class="regulation-picker" id="field-regulation-ids"></div>
+            </label>
+          </div>
+
+          <section class="panel upload-panel">
+            <div class="panel-head">
+              <h2>1. Видео <span class="panel-optional">необязательно</span></h2>
+              <span class="status-badge" id="project-status">draft</span>
+            </div>
+            <p class="status-text" id="status-message">Добавьте шаги и скриншоты. Видео — если нужна автоматическая расшифровка.</p>
+            <div class="upload-row">
+              <input id="video-input" type="file" accept="video/*" />
+              <button class="primary-btn" id="upload-video" type="button">Загрузить видео</button>
+              <button class="secondary-btn" id="process-video" type="button">Создать инструкцию из видео</button>
+            </div>
+            <div class="whisper-row">
+              <label class="whisper-model-label">Модель распознавания
+                <select id="field-whisper-model">
+                  <option value="base">base — быстро, черновик</option>
+                  <option value="small">small — рекомендуется</option>
+                  <option value="medium">medium — максимум качества</option>
+                  <option value="tiny">tiny — очень быстро</option>
+                </select>
+              </label>
+              <button class="ghost-btn" id="reclean-transcript" type="button" title="Перечистить текст и пересобрать шаги без повторного распознавания">Перечистить текст</button>
+            </div>
+            <p class="whisper-hint" id="whisper-hint">Модель применяется при следующей обработке видео. «Перечистить» — убрать паразиты из уже распознанного текста.</p>
+          </section>
+
+          <div class="editor-grid">
+            <section class="panel steps-panel">
+              <div class="panel-head">
+                <h2>2. Шаги</h2>
+                <span id="steps-count">0</span>
+              </div>
+              <div class="step-controls">
+                <button class="ghost-btn" id="add-step" type="button">+ Шаг</button>
+                <button class="ghost-btn" id="delete-step" type="button">Удалить</button>
+                <button class="ghost-btn" id="move-step-up" type="button">↑</button>
+                <button class="ghost-btn" id="move-step-down" type="button">↓</button>
+              </div>
+              <div class="steps-list" id="steps-list"></div>
+            </section>
+
+            <section class="panel step-editor">
+              <div class="step-fields meta-grid step-fields-grid">
+                <label>Заголовок<input id="step-title" type="text" /></label>
+                <label>Зачем этот шаг<div id="step-why" class="rich-field" contenteditable="true" data-placeholder="Зачем нужен этот шаг"></div></label>
+                <label>Комментарий<div id="step-comment" class="rich-field" contenteditable="true" data-placeholder="Комментарий к шагу"></div></label>
+                <div class="span-3 field-block action-label">
+                  <span class="field-caption">Действие</span>
+                  <div class="action-field" id="action-field">
+                    <div id="step-action" class="rich-field" contenteditable="true" data-placeholder="Кликните в поле, затем нажмите метку — в текст вставится {1}, {2}… Обычные цифры без скобок остаются текстом"></div>
+                    <div class="action-markers" id="step-action-markers"></div>
+                  </div>
+                </div>
+                <label class="span-3">Готово, если<div id="step-result" class="rich-field" contenteditable="true" data-placeholder="Критерий готовности"></div></label>
+              </div>
+
+              <div class="frame-picker hidden" id="frame-picker-row">
+                <label>Кадр из видео
+                  <select id="frame-select"></select>
+                </label>
+                <button class="secondary-btn" id="apply-frame" type="button">Добавить кадр</button>
+              </div>
+
+              <div class="screenshot-row">
+                <input id="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden />
+                <button class="secondary-btn" id="upload-image" type="button">+ Скриншот</button>
+                <button class="ghost-btn" id="delete-step-frame" type="button">Удалить скрин</button>
+                <span class="screenshot-hint">файл или <kbd>Ctrl</kbd>+<kbd>V</kbd> — видео не нужно</span>
+              </div>
+
+              <div class="step-frames-strip" id="step-frames-strip" aria-label="Скриншоты шага" tabindex="0"></div>
+
+              <div id="annotation-dock">
+                <div class="panel-head annotation-head">
+                  <h2 id="step-editor-title">Шаг</h2>
+                  <div class="toolbar" id="annotation-toolbar">
+                    <button class="tool-btn is-active" data-tool="select" type="button">Выбор</button>
+                    <button class="tool-btn" data-tool="arrow" type="button">Стрелка</button>
+                    <button class="tool-btn" data-tool="rect" type="button">Рамка</button>
+                    <button class="tool-btn" data-tool="circle" type="button">Круг</button>
+                    <button class="tool-btn" data-tool="text" type="button">Текст</button>
+                    <button class="tool-btn" data-tool="callout" type="button">Сноска</button>
+                    <button class="ghost-btn" id="delete-annotation" type="button">Удалить</button>
+                    <button class="ghost-btn" id="undo-annotation" type="button">Отмена</button>
+                    <button class="ghost-btn" id="clear-annotations" type="button">Очистить</button>
+                  </div>
+                </div>
+
+                <div class="color-row">
+                  <span class="color-label">Цвет:</span>
+                  <div class="color-toolbar" id="color-toolbar"></div>
+                </div>
+                <div class="color-row color-row-palette" id="palette-row">
+                  <span class="color-label">Цвет элемента:</span>
+                  <div class="color-palette" id="color-palette"></div>
+                </div>
+
+                <div class="canvas-wrap" id="canvas-wrap" title="Двойной клик — открыть в большом размере" tabindex="0">
+                  <canvas id="annotation-canvas"></canvas>
+                  <button class="canvas-expand-btn" id="canvas-expand" type="button">Увеличить</button>
+                </div>
+                <p class="canvas-hint">Клик по элементу — выделение и перемещение. Рамка/круг — автономер внутри (двойной клик — изменить). В «Действии» укажите номера — они станут кликабельными и подсветят элемент на скрине. Delete — удалить.</p>
+              </div>
+
+              <div class="canvas-placeholder hidden" id="canvas-placeholder">
+                <p>Скриншот открыт в полноэкранном режиме для разметки.</p>
+                <button class="secondary-btn" id="canvas-placeholder-close" type="button">Вернуть сюда</button>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="regulations-workspace hidden" id="regulations-workspace">
+          <header class="editor-header">
+            <div>
+              <p class="eyebrow">Справочник</p>
+              <h2 class="regulations-title">Регламенты</h2>
+            </div>
+            <div class="header-actions">
+              <button class="primary-btn" id="new-regulation" type="button">+ Регламент</button>
+              <button class="secondary-btn" id="save-regulation" type="button">Сохранить черновик</button>
+              <button class="primary-btn hidden" id="publish-regulation" type="button">Опубликовать</button>
+              <button class="ghost-btn hidden" id="unpublish-regulation" type="button">Снять с публикации</button>
+              <button class="danger-btn hidden" id="delete-regulation" type="button">Удалить</button>
+            </div>
+          </header>
+
+          <div class="regulations-layout">
+            <aside class="panel regulations-list-panel">
+              <div class="panel-head">
+                <h2>Список</h2>
+                <span id="regulations-count">0</span>
+              </div>
+              <div class="regulations-list" id="regulations-list"></div>
+            </aside>
+
+            <section class="panel regulation-editor-panel">
+              <div class="meta-grid regulation-editor-grid">
+                <label>Идентификатор<input id="regulation-id" type="text" placeholder="upakovka-fbs" /></label>
+                <label class="span-2">Название<input id="regulation-title" type="text" placeholder="Регламент упаковки FBS" /></label>
+                <label class="span-3">Ссылка на документ<input id="regulation-url" type="url" placeholder="https://… или ./docs/file.pdf" /></label>
+                <label class="span-3">Текст регламента<textarea id="regulation-text" rows="14" placeholder="Полный текст или краткое содержание"></textarea></label>
+              </div>
+              <p class="status-text" id="regulation-status">Выберите регламент или создайте новый.</p>
+            </section>
+          </div>
+        </section>
+
+        <section class="users-workspace hidden" id="users-workspace">
+          <header class="editor-header">
+            <div>
+              <p class="eyebrow">Доступ</p>
+              <h2 class="users-title">Пользователи</h2>
+            </div>
+            <div class="header-actions">
+              <button class="primary-btn" id="new-user" type="button">+ Пользователь</button>
+              <button class="secondary-btn" id="save-user" type="button">Сохранить</button>
+              <button class="danger-btn hidden" id="delete-user" type="button">Удалить</button>
+            </div>
+          </header>
+
+          <div class="regulations-layout users-layout">
+            <aside class="panel users-list-panel">
+              <div class="panel-head">
+                <h2>Учётные записи</h2>
+                <span id="users-count">0</span>
+              </div>
+              <div class="users-list" id="users-list"></div>
+            </aside>
+
+            <section class="panel user-editor-panel">
+              <div class="meta-grid user-editor-grid">
+                <label>Логин<input id="user-login" type="text" placeholder="ivan.petrov" autocomplete="off" /></label>
+                <label>Имя в интерфейсе<input id="user-display-name" type="text" placeholder="Иван Петров" /></label>
+                <label>Роль
+                  <select id="user-role">
+                    <option value="employee">Сотрудник</option>
+                    <option value="admin">Администратор</option>
+                  </select>
+                </label>
+                <label class="span-3">Пароль<input id="user-password" type="password" autocomplete="new-password" placeholder="Минимум 6 символов" /></label>
+                <label class="span-3 hidden" id="user-password-confirm-wrap">Повторите пароль<input id="user-password-confirm" type="password" autocomplete="new-password" /></label>
+              </div>
+              <p class="status-text" id="user-status">Выберите пользователя или создайте нового.</p>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="canvas-lightbox hidden" id="canvas-lightbox" role="dialog" aria-modal="true" aria-label="Разметка скриншота">
+      <div class="canvas-lightbox-inner" id="canvas-lightbox-inner"></div>
+      <button class="canvas-lightbox-close" id="canvas-lightbox-close" type="button" aria-label="Закрыть">✕</button>
+    </div>
+
+    <dialog id="snippet-dialog">
+      <form method="dialog">
+        <h3>Фрагмент для site/app.js</h3>
+        <p>Скопируйте объект и добавьте в массив <code>materials</code>.</p>
+        <textarea id="snippet-output" rows="16" readonly></textarea>
+        <menu>
+          <button value="cancel" type="submit">Закрыть</button>
+          <button id="copy-snippet" value="default" type="submit">Копировать</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <div id="rich-format-bubble" class="rich-format-bubble hidden" role="toolbar" aria-label="Форматирование текста">
+      <button type="button" id="format-bold-btn" class="format-bold-btn" title="Жирный">B</button>
+      <button type="button" id="format-normal-btn" class="format-normal-btn" title="Обычный текст">S</button>
+    </div>
+
+    <script src="static/canvas-editor.js?v=20260704g"></script>
+    <script src="static/builder.js?v=20260704g"></script>
+  </body>
+</html>

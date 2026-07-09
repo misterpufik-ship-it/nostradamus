@@ -1,0 +1,56 @@
+{
+  "logo": "assets/ai-nostradamus-logo.png",
+  "logoSize": "clamp(220px, 28vw, 360px)",
+  "background_type": "color",
+  "background_color": "#000000",
+  "background": "",
+  "footerBackground": "",
+  "title": {
+    "main": "Сервисы для работы",
+    "accent": "с маркетплейсами"
+  },
+  "subtitle": "Набор AI инструментов для автоматизации, контроля и роста бизнеса",
+  "fontSizes": {
+    "title": "clamp(22px, 3.5vw, 40px)",
+    "subtitle": "clamp(15px, 2vw, 18px)",
+    "button": "clamp(16px, 2.2vw, 20px)"
+  },
+  "services": [
+    {
+      "id": "obuchenie",
+      "label": "Учебный центр",
+      "href": "obuchenie/",
+      "accent": false
+    },
+    {
+      "id": "list",
+      "label": "Лист сборки",
+      "href": "list/",
+      "accent": false
+    },
+    {
+      "id": "sklad",
+      "label": "Учет времени",
+      "href": "sklad/",
+      "accent": true
+    },
+    {
+      "id": "cdek",
+      "label": "Сортировка СДЭК",
+      "href": "cdek/",
+      "accent": false
+    },
+    {
+      "id": "proverka_postavok",
+      "label": "Контроль поставок",
+      "href": "proverka_postavok/",
+      "accent": false
+    },
+    {
+      "id": "inventa",
+      "label": "Inventa",
+      "href": "inventa/",
+      "accent": false
+    }
+  ]
+}

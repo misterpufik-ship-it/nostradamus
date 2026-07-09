@@ -1,0 +1,14 @@
+Options -Indexes
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^api/records$ api.php?action=records [QSA,L]
+  RewriteRule ^api/arrival$ api.php?action=arrival [QSA,L]
+  RewriteRule ^api/leave$ api.php?action=leave [QSA,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

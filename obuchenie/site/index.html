@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Учебный центр X-active</title>
+    <link rel="icon" href="./favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="stylesheet" href="./styles.css?v=20260708a" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="rail" id="sidebar" aria-label="Темы обучения">
+        <div class="brand">
+          <div class="brand-mark">XA</div>
+          <div>
+            <p class="eyebrow">Учебная база</p>
+            <h1>X-active обучение</h1>
+          </div>
+          <button class="rail-collapse" id="sidebar-toggle" type="button" aria-expanded="true" aria-controls="sidebar" title="Свернуть меню">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+          </button>
+        </div>
+
+        <nav class="mode-switch" aria-label="Режим работы">
+          <button class="mode-btn is-active" type="button" data-mode="library">База</button>
+          <button class="mode-btn" type="button" data-mode="regulations">Регламенты</button>
+          <button class="mode-btn" type="button" data-mode="tools">Инструменты</button>
+          <button class="mode-btn" type="button" data-mode="develop">Создать урок</button>
+        </nav>
+
+        <div class="rail-scroll" id="rail-library">
+          <section class="rail-section rail-materials" aria-label="Список материалов">
+            <div class="rail-title">
+              <span>Материалы</span>
+              <strong id="match-count">0</strong>
+            </div>
+            <div class="material-list" id="material-list"></div>
+          </section>
+
+          <details class="topics-dropdown" id="topics-dropdown">
+            <summary class="topics-dropdown-summary">
+              <span class="topics-dropdown-label">Темы</span>
+              <strong id="topics-count">0</strong>
+            </summary>
+            <nav class="topic-list" id="topic-list" aria-label="Оглавление по темам"></nav>
+          </details>
+        </div>
+
+        <div class="rail-scroll hidden" id="rail-regulations">
+          <section class="rail-section rail-materials" aria-label="Список регламентов">
+            <div class="rail-title">
+              <span>Регламенты</span>
+              <strong id="regulations-match-count">0</strong>
+            </div>
+            <div class="material-list" id="regulation-list"></div>
+          </section>
+        </div>
+
+        <div class="rail-bottom">
+          <div class="search-box" role="search">
+            <label for="search-input">Поиск</label>
+            <input id="search-input" type="search" placeholder="Токен, карточки, поставка…" autocomplete="off" />
+          </div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <button class="sidebar-restore" id="sidebar-restore" type="button" aria-label="Показать меню" title="Показать меню">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+        </button>
+
+        <section class="topbar">
+          <div>
+            <p class="eyebrow">Учебный центр</p>
+            <h2 id="topbar-title">Материалы</h2>
+          </div>
+          <div class="summary-strip" aria-label="Сводка учебной базы">
+            <div>
+              <span id="materials-count">0</span>
+              <small>материалов</small>
+            </div>
+            <div>
+              <span id="steps-count">0</span>
+              <small>шагов</small>
+            </div>
+            <div>
+              <span id="videos-count">0</span>
+              <small>видео</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="library-layout" id="library-layout">
+          <article class="lesson-card" id="lesson-card" aria-live="polite">
+            <header class="lesson-header">
+              <p class="eyebrow editable-field" id="lesson-topic" tabindex="0"></p>
+              <h2 class="editable-field" id="lesson-title" tabindex="0"></h2>
+              <p class="lesson-description editable-field hidden" id="lesson-description" tabindex="0"></p>
+              <div class="lesson-meta" id="lesson-meta"></div>
+              <div class="lesson-actions" id="lesson-actions">
+                <button class="secondary-btn hidden" id="edit-lesson" type="button">Редактировать</button>
+                <button class="primary-btn hidden" id="save-lesson" type="button">Сохранить</button>
+                <button class="ghost-btn hidden" id="open-builder" type="button">Конструктор</button>
+              </div>
+            </header>
+
+            <section class="lesson-view is-active is-extended" id="guide-view">
+              <div class="process-strip" id="process-strip"></div>
+              <div class="step-toolbar">
+                <button class="icon-button" type="button" id="prev-step" aria-label="Предыдущий шаг" title="Предыдущий шаг">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+                </button>
+                <div>
+                  <span class="mini-label" id="step-kicker"></span>
+                  <h3 class="editable-field" id="step-title" tabindex="0"></h3>
+                </div>
+                <button class="icon-button" type="button" id="next-step" aria-label="Следующий шаг" title="Следующий шаг">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                </button>
+              </div>
+              <div class="step-panel" id="step-panel">
+                <div class="step-copy-column" id="step-copy-column">
+                  <div class="step-copy" id="step-copy">
+                  <div class="instruction-main">
+                    <span class="mini-label">Действие</span>
+                    <div class="editable-field" id="step-action" tabindex="0"></div>
+                  </div>
+                  <details class="instruction-fold">
+                    <summary>Зачем</summary>
+                    <p class="editable-field" id="step-why" tabindex="0"></p>
+                  </details>
+                  <details class="instruction-fold">
+                    <summary>Готово, если</summary>
+                    <p class="editable-field" id="step-result" tabindex="0"></p>
+                  </details>
+                  <label class="complete-toggle">
+                    <input type="checkbox" id="step-complete" />
+                    <span>Шаг понятен и выполнен</span>
+                  </label>
+                </div>
+                </div>
+                <div class="step-slides" id="step-slides"></div>
+              </div>
+            </section>
+
+            <section class="lesson-view" id="check-view">
+              <div class="checklist" id="checklist"></div>
+            </section>
+
+            <section class="lesson-view" id="issues-view">
+              <div class="mistake-grid" id="mistake-grid"></div>
+              <div class="mistake-detail" id="mistake-detail"></div>
+            </section>
+
+            <section class="lesson-view" id="regulations-view">
+              <div class="regulation-grid" id="lesson-regulation-grid"></div>
+              <div class="regulation-detail" id="lesson-regulation-detail"></div>
+            </section>
+
+            <section class="lesson-view" id="video-view">
+              <div class="video-panel">
+                <video id="source-video" controls preload="metadata"></video>
+                <div>
+                  <p class="eyebrow">Исходный ролик</p>
+                  <h3 id="video-title"></h3>
+                  <p id="video-note"></p>
+                  <a class="file-link" id="video-link" href="" target="_blank" rel="noreferrer">Открыть видео отдельно</a>
+                </div>
+              </div>
+            </section>
+
+            <details class="tag-panel">
+              <summary>Ключевые слова</summary>
+              <div class="keyword-row" id="keyword-row" aria-label="Ключевые слова материала"></div>
+            </details>
+
+            <div class="view-tabs" role="tablist" aria-label="Разделы материала">
+              <button class="view-tab is-active" type="button" data-view="guide" role="tab" aria-selected="true">Инструкция</button>
+              <button class="view-tab" type="button" data-view="check" role="tab" aria-selected="false">Контроль</button>
+              <button class="view-tab" type="button" data-view="issues" role="tab" aria-selected="false">Ошибки</button>
+              <button class="view-tab" type="button" data-view="regulations" role="tab" aria-selected="false">Регламенты</button>
+              <button class="view-tab" type="button" data-view="video" role="tab" aria-selected="false">Исходное видео</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="regulations-layout hidden" id="regulations-layout" aria-label="Регламенты">
+          <article class="lesson-card regulation-card">
+            <header class="lesson-header">
+              <p class="eyebrow">Справочник</p>
+              <h2 id="regulation-page-title">Регламенты</h2>
+              <p class="lesson-description" id="regulation-page-lead">Выберите регламент в списке слева.</p>
+            </header>
+            <div class="regulation-page-body" id="regulation-page-body"></div>
+          </article>
+        </section>
+
+        <section class="tools-layout hidden" id="tools-layout" aria-label="Инструменты Nostradamus">
+          <div class="tools-card">
+            <header class="tools-header">
+              <div>
+                <p class="eyebrow">Nostradamus</p>
+                <h2>Инструменты</h2>
+              </div>
+              <nav class="tool-tabs" aria-label="Подразделы инструментов">
+                <button class="tool-tab is-active" type="button" data-tool="cdek">СДЭК</button>
+                <a class="tool-tab tool-tab-link" href="https://nostradamus-1503.ru/list/" target="_blank" rel="noreferrer">Лист сборки</a>
+              </nav>
+            </header>
+
+            <div class="tool-panel" id="tool-cdek">
+              <div class="tools-intro">
+                <h3>Сортировка этикеток СДЭК</h3>
+                <p>
+                  Загрузите PDF со штрихкодами из личного кабинета СДЭК. Страницы будут переставлены по номеру
+                  грузового места (1, 2, 3…), сами этикетки не изменятся — меняется только порядок печати.
+                </p>
+              </div>
+
+              <div class="tools-workspace">
+                <label class="tools-dropzone" id="cdek-dropzone" for="cdek-file">
+                  <strong>Перетащите PDF сюда</strong>
+                  <span>или нажмите, чтобы выбрать файл</span>
+                  <input id="cdek-file" type="file" accept="application/pdf,.pdf" hidden />
+                </label>
+
+                <div class="tools-actions">
+                  <button class="primary-btn" id="cdek-process" type="button" disabled>Отсортировать</button>
+                  <button class="secondary-btn" id="cdek-download" type="button" disabled>Скачать PDF</button>
+                </div>
+
+                <p class="tools-status" id="cdek-status" data-tone="info">Загрузите PDF со штрихкодами СДЭК.</p>
+                <div class="tools-preview" id="cdek-preview"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="develop-layout hidden" id="develop-layout" aria-label="Разработка урока">
+          <div class="develop-card">
+            <header class="develop-header">
+              <p class="eyebrow">Конструктор</p>
+              <h2>Разработка урока из видео</h2>
+              <a class="dev-link-btn dev-link-btn-light" id="develop-open-link" href="/obuchenie/builder/login" target="_blank" rel="noreferrer">Открыть в новой вкладке</a>
+            </header>
+            <iframe
+              class="develop-frame"
+              id="develop-frame"
+              title="Разработка урока"
+              loading="lazy"
+            ></iframe>
+            <p class="develop-note hidden" id="develop-note">
+              Не удалось загрузить конструктор. Попробуйте открыть его в новой вкладке.
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="image-lightbox" id="image-lightbox" hidden>
+      <button class="lightbox-close" id="lightbox-close" type="button" aria-label="Закрыть">×</button>
+      <img id="lightbox-image" src="" alt="" />
+      <p id="lightbox-caption"></p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script type="module" src="./tools/tools.js?v=20260708a"></script>
+    <script src="./app.js?v=20260708a"></script>
+  </body>
+</html>

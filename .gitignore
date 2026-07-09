@@ -1,0 +1,32 @@
+# Obuchenie / lesson builder
+obuchenie/lesson_builder/projects/
+obuchenie/lesson_builder/users.json
+obuchenie/lesson_builder/regulation-drafts.json
+obuchenie/lesson_builder/**/__pycache__/
+obuchenie/Videos/
+obuchenie/source_video.mp4
+obuchenie/training_output/
+obuchenie/video_frames/
+obuchenie/site/assets/wb_supply_probe/
+obuchenie/site/videos/
+obuchenie/site_server*.log
+
+# Python
+*.pyc
+__pycache__/
+
+# Large media (keep site_ex2 demo video)
+*.mp4
+!obuchenie/site_ex2/assets/video.mp4
+
+# Nostradamus admin secrets
+deploy/nostradamus-1503.ru/public_html/admin/config/auth.php
+deploy/nostradamus-1503.ru/public_html/sklad/config/db.php
+
+# Node / OS
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Local server artifacts
+*.log

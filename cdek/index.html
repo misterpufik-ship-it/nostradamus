@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nostradamus | Сортировка СДЭК</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <main class="page" id="cdek-app">
+      <section class="panel">
+        <header class="panel-header">
+          <a class="back-link" href="../">← Сервисы</a>
+          <p class="eyebrow">Nostradamus</p>
+          <h1>Сортировка СДЭК</h1>
+          <p class="lead">
+            Загрузите PDF со штрихкодами из личного кабинета СДЭК. Страницы будут переставлены по номеру
+            грузового места (1, 2, 3…), сами этикетки не изменятся — меняется только порядок печати.
+          </p>
+        </header>
+
+        <div class="workspace">
+          <label class="dropzone" id="cdek-dropzone" for="cdek-file">
+            <strong>Перетащите PDF сюда</strong>
+            <span>или нажмите, чтобы выбрать файл</span>
+            <input id="cdek-file" type="file" accept="application/pdf,.pdf" hidden />
+          </label>
+
+          <div class="actions">
+            <button class="btn btn-primary" id="cdek-process" type="button" disabled>Отсортировать</button>
+            <button class="btn btn-secondary" id="cdek-download" type="button" disabled>Скачать PDF</button>
+            <button class="btn btn-secondary" id="cdek-print" type="button" disabled>Печать</button>
+          </div>
+
+          <p class="status" id="cdek-status" data-tone="info">Загрузите PDF со штрихкодами СДЭК.</p>
+          <div class="preview" id="cdek-preview"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script type="module" src="js/cdek.js"></script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+---
+description: После правок в проекте — коммит, push и деплой на VPS/BeGet
+alwaysApply: true
+---
+
+# Commit → Push → Deploy
+
+После любых завершённых правок в этом репозитории (если пользователь явно не просил только обсудить/спросить):
+
+1. **Проверить** `git status` — все нужные файлы в коммите.
+2. **Закоммитить** с кратким сообщением на русском (что и зачем).
+3. **Запушить** в `origin` (`git push`).
+4. **Задеплоить**:
+   - учебный центр: `powershell -NoProfile -File scripts/deploy-vps.ps1 -SkipPush` (push уже сделан);
+   - если менялся конструктор (`obuchenie/lesson_builder/`, `deploy/lesson-builder.service`): перезапустить сервис на VPS:
+     ```bash
+     ssh root@82.202.129.7 "systemctl restart x-active-lesson-builder && systemctl is-active x-active-lesson-builder"
+     ```
+5. **Сообщить пользователю** итог: хеш коммита, что задеплоено, ссылки:
+   - главная: https://nostradamus-1503.ru/
+   - учебный центр: https://nostradamus-1503.ru/obuchenie/
+   - конструктор: https://posoolonono.beget.app/x-active-builder/
+
+Не оставлять правки только локально. Не коммитить секреты (`users.json`, `auth.php`, `db.php`, `.env`). При ошибке квоты BeGet — прогнать `deploy/prune-beget-backups.sh` на VPS.
+
+## Структура
+
+- `deploy/nostradamus-1503.ru/public_html/` — главная nostradamus-1503.ru и сервисы (sklad, inventa, admin…)
+- `obuchenie/site/` — учебный центр `/obuchenie/`
+- `obuchenie/lesson_builder/` — конструктор уроков (Python на VPS)

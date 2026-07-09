@@ -1,0 +1,17 @@
+[Unit]
+Description=X-active lesson builder
+After=network.target
+
+[Service]
+User=deploy
+Group=deploy
+WorkingDirectory=/srv/deploy/projects/x-active-obuchenie/repo/obuchenie
+Environment=PATH=/srv/deploy/projects/x-active-obuchenie/venv/bin:/usr/bin
+Environment=BUILDER_SECRET_KEY=CHANGE_ME_ON_SERVER
+Environment=BUILDER_USERS_FILE=/srv/deploy/projects/x-active-obuchenie/users.json
+ExecStart=/srv/deploy/projects/x-active-obuchenie/venv/bin/gunicorn --bind 127.0.0.1:8765 --workers 1 --threads 4 --timeout 600 lesson_builder.server:app
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

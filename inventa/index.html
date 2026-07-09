@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nostradamus | Inventa</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <main class="page" id="inventa-app">
+      <section class="panel">
+        <header class="panel-header">
+          <a class="back-link" href="../">← Сервисы</a>
+          <p class="eyebrow">Nostradamus</p>
+          <h1>Inventa</h1>
+          <p class="lead">
+            Загрузите исходный файл stocks из учётной системы. На выходе получите файл инвентаризации с
+            фильтрами, скрытыми колонками и подсветкой количества, как в образце.
+          </p>
+        </header>
+
+        <div class="workspace">
+          <label class="dropzone" id="inventa-dropzone" for="inventa-file">
+            <strong>Перетащите Excel (.xlsx) сюда</strong>
+            <span>или нажмите, чтобы выбрать файл stocks</span>
+            <input id="inventa-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden />
+          </label>
+
+          <div class="actions">
+            <button class="btn btn-primary" id="inventa-process" type="button" disabled>Собрать инвентаризацию</button>
+            <button class="btn btn-secondary" id="inventa-download" type="button" disabled>Скачать Excel</button>
+          </div>
+
+          <p class="status" id="inventa-status" data-tone="info">Загрузите исходный файл stocks (.xlsx).</p>
+          <ul class="feature-list" id="inventa-features">
+            <li>Фильтр по организации (как в образце)</li>
+            <li>Скрытые колонки: D, J, M, O, P</li>
+            <li>Жёлтая подсветка колонки «Остаток товара»</li>
+            <li>Ширины колонок как в образце инвентаризации</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="js/inventa.js"></script>
+  </body>
+</html>

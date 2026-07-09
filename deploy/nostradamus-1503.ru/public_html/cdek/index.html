@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Nostradamus | Сортировка СДЭК</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css?v=2026071006" />
+  </head>
+  <body>
+    <main class="home" id="cdek-app">
+      <a class="service-back" href="../">← Сервисы</a>
+
+      <header class="home-header">
+        <img
+          class="brand-logo"
+          src="../assets/ai-nostradamus-logo.png"
+          alt="AI Nostradamus"
+          width="320"
+          height="320"
+        />
+        <h1 class="home-title">Сортировка <span class="accent">СДЭК</span></h1>
+      </header>
+
+      <p class="home-subtitle">
+        Загрузите PDF со штрихкодами из личного кабинета СДЭК. Страницы будут переставлены по номеру
+        грузового места — меняется только порядок печати.
+      </p>
+
+      <div class="service-content workspace">
+        <label class="dropzone" id="cdek-dropzone" for="cdek-file">
+          <strong>Перетащите PDF сюда</strong>
+          <span>или нажмите, чтобы выбрать файл</span>
+          <input id="cdek-file" type="file" accept="application/pdf,.pdf" hidden />
+        </label>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="cdek-process" type="button" disabled>Отсортировать</button>
+          <button class="btn btn-secondary" id="cdek-download" type="button" disabled>Скачать PDF</button>
+          <button class="btn btn-secondary" id="cdek-print" type="button" disabled>Печать</button>
+        </div>
+
+        <p class="status" id="cdek-status" data-tone="info">Загрузите PDF со штрихкодами СДЭК.</p>
+        <div class="preview" id="cdek-preview"></div>
+      </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script type="module" src="js/cdek.js"></script>
+  </body>
+</html>

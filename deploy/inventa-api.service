@@ -1,0 +1,14 @@
+[Unit]
+Description=Inventa Excel conversion API
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/srv/deploy/projects/x-active-inventa/inventa
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/srv/deploy/projects/x-active-inventa/venv/bin/python api_server.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

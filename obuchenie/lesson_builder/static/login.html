@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вход — X-active конструктор</title>
+    <link rel="stylesheet" href="static/builder.css?v=20260704g" />
+    <style>
+      body {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #eef2f6;
+      }
+      .login-card {
+        width: min(420px, calc(100vw - 32px));
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 16px 34px rgba(23, 32, 42, 0.09);
+      }
+      .login-card h1 {
+        margin: 8px 0 6px;
+        font-size: 24px;
+      }
+      .login-card form {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+      }
+      .login-card label {
+        display: grid;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .login-card input {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 11px 12px;
+        font: inherit;
+      }
+      .login-error {
+        margin: 0;
+        color: #b42318;
+        font-size: 14px;
+        min-height: 1.2em;
+      }
+      .login-hint {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-card">
+      <p class="eyebrow">X-active</p>
+
+      <div id="login-view">
+        <h1>Вход в конструктор</h1>
+        <p class="login-hint">Учебная база открыта для просмотра. Редактирование — после входа.</p>
+      <form id="login-form" method="post" action="#" autocomplete="on">
+        <label>
+          Логин
+          <input id="login-input" name="username" type="text" autocomplete="username" required />
+        </label>
+        <label>
+          Пароль
+          <input id="password-input" name="password" type="password" autocomplete="current-password" required />
+        </label>
+          <p class="login-error" id="login-error" aria-live="polite"></p>
+          <button class="primary-btn" type="submit">Войти</button>
+        </form>
+      </div>
+
+      <div id="setup-view" class="hidden">
+        <h1>Первый вход</h1>
+        <p class="login-hint">Создайте учётную запись администратора. Потом в конструкторе можно добавить сотрудников со своими логинами и паролями.</p>
+        <form id="setup-form" method="post" action="#" autocomplete="on">
+          <label>
+            Логин администратора
+            <input id="setup-login" name="username" type="text" autocomplete="username" required placeholder="admin" />
+          </label>
+          <label>
+            Имя в интерфейсе
+            <input id="setup-name" name="name" type="text" autocomplete="name" placeholder="Администратор" />
+          </label>
+          <label>
+            Пароль
+            <input id="setup-password" name="new-password" type="password" autocomplete="new-password" required minlength="6" />
+          </label>
+          <label>
+            Повторите пароль
+            <input id="setup-confirm" name="confirm-password" type="password" autocomplete="new-password" required minlength="6" />
+          </label>
+          <p class="login-error" id="setup-error" aria-live="polite"></p>
+          <button class="primary-btn" type="submit">Создать и войти</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      function appRoot() {
+        const { pathname } = window.location;
+        for (const marker of ["/obuchenie/builder", "/x-active-builder"]) {
+          const index = pathname.indexOf(marker);
+          if (index >= 0) return marker;
+        }
+        return "";
+      }
+
+      function appUrl(path) {
+        const suffix = path.startsWith("/") ? path : `/${path}`;
+        return `${appRoot()}${suffix}`;
+      }
+
+      const loginView = document.getElementById("login-view");
+      const setupView = document.getElementById("setup-view");
+      const loginForm = document.getElementById("login-form");
+      const setupForm = document.getElementById("setup-form");
+      const loginError = document.getElementById("login-error");
+      const setupError = document.getElementById("setup-error");
+
+      async function checkAuthStatus() {
+        const response = await fetch(appUrl("/api/auth/status"), { credentials: "include" });
+        const payload = await response.json().catch(() => ({}));
+        if (payload.user) {
+          window.location.href = appUrl("/");
+          return;
+        }
+        const setupMode = !payload.hasUsers;
+        loginView.classList.toggle("hidden", setupMode);
+        setupView.classList.toggle("hidden", !setupMode);
+        document.title = setupMode ? "Настройка — X-active конструктор" : "Вход — X-active конструктор";
+      }
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        loginError.textContent = "";
+        const login = document.getElementById("login-input").value.trim();
+        const password = document.getElementById("password-input").value;
+        try {
+          const response = await fetch(appUrl("/api/login"), {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ login, password }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload.error || "Не удалось войти");
+          }
+          window.location.href = appUrl("/");
+        } catch (error) {
+          loginError.textContent = error.message || "Ошибка входа";
+        }
+      });
+
+      setupForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setupError.textContent = "";
+        const login = document.getElementById("setup-login").value.trim();
+        const displayName = document.getElementById("setup-name").value.trim();
+        const password = document.getElementById("setup-password").value;
+        const confirmPassword = document.getElementById("setup-confirm").value;
+        try {
+          const response = await fetch(appUrl("/api/setup"), {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ login, displayName, password, confirmPassword }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload.error || "Не удалось создать администратора");
+          }
+          window.location.href = appUrl("/");
+        } catch (error) {
+          setupError.textContent = error.message || "Ошибка настройки";
+        }
+      });
+
+      checkAuthStatus().catch(() => {
+        loginError.textContent = "Не удалось проверить состояние входа.";
+      });
+    </script>
+  </body>
+</html>

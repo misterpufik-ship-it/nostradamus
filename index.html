@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Nostradamus | Учет времени склада</title>
+    <link rel="stylesheet" href="../assets/nostradamus-theme.css" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="page-top">
+        <a class="back-link" href="../">← Сервисы</a>
+        <div class="page-brand-compact">
+          <img class="page-brand-logo" src="../assets/ai-nostradamus-logo.png" alt="" width="72" height="72" />
+          <div>
+            <p class="eyebrow">AI Nostradamus</p>
+            <h1 class="page-title">Учет рабочего времени склада</h1>
+            <p class="page-lead">Фиксация прихода и ухода сотрудника с геопозицией.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Склад</p>
+            <h2>Учет прихода и ухода</h2>
+          </div>
+          <time class="today" id="todayLabel"></time>
+        </div>
+
+        <div class="employee-row">
+          <label for="employeeName">Сотрудник</label>
+          <input id="employeeName" type="text" value="Анастасия" placeholder="Введите имя сотрудника" autocomplete="name" />
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-start" id="arrivalBtn" type="button">Пришел на рабочее место</button>
+          <button class="btn btn-end" id="leaveBtn" type="button">Ушел с рабочего места</button>
+        </div>
+
+        <p class="status" id="statusText">Готово к отметке. Браузер попросит доступ к геопозиции.</p>
+      </section>
+
+      <section class="stats-grid" aria-label="Итоги за выбранный день">
+        <article class="stat-card">
+          <span>На рабочем месте</span>
+          <strong id="workedToday">0 ч 00 мин</strong>
+        </article>
+        <article class="stat-card">
+          <span>Недоработка общая</span>
+          <strong id="underTime">9 ч 00 мин</strong>
+        </article>
+        <article class="stat-card">
+          <span>Переработка общая</span>
+          <strong id="overTime">0 ч 00 мин</strong>
+        </article>
+      </section>
+
+      <section class="records-section">
+        <div class="section-toolbar">
+          <h2>Отметки по дням</h2>
+          <div class="toolbar-actions">
+            <input id="dateFilter" type="date" aria-label="Выбрать дату" />
+            <button class="ghost-btn" id="clearDayBtn" type="button">Очистить день</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Сотрудник</th>
+                <th>Пришел</th>
+                <th>Гео прихода</th>
+                <th>Ушел</th>
+                <th>Гео ухода</th>
+                <th>Итого</th>
+                <th>Недоработка</th>
+                <th>Переработка</th>
+              </tr>
+            </thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="js/app.js"></script>
+  </body>
+</html>
