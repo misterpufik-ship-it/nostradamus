@@ -1,0 +1,29 @@
+﻿# Dependencies
+node_modules/
+vendor/
+dist/
+build/
+
+# Version control
+.git/
+
+# Logs and temp
+*.log
+tmp/
+temp/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+users.json
+auth.php
+db.php
+scripts/deploy.env.ps1
+
+# OS and editor
+.DS_Store
+Thumbs.db
