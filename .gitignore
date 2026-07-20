@@ -2,6 +2,7 @@
 obuchenie/lesson_builder/projects/
 obuchenie/lesson_builder/users.json
 obuchenie/lesson_builder/regulation-drafts.json
+obuchenie/lesson_builder/packaging-drafts.json
 obuchenie/lesson_builder/**/__pycache__/
 obuchenie/Videos/
 obuchenie/source_video.mp4

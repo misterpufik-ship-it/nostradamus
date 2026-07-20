@@ -1,8 +1,10 @@
 const baseMaterials = [];
 const baseRegulations = [];
+const basePackaging = [];
 
 let materials = [...baseMaterials];
 let regulations = [...baseRegulations];
+let packagingItems = [...basePackaging];
 const publishedEditableIds = new Set();
 
 async function loadPublishedRegulations() {
@@ -14,6 +16,18 @@ async function loadPublishedRegulations() {
     regulations = published.filter((item) => item?.id);
   } catch {
     /* published-regulations.json may be missing offline */
+  }
+}
+
+async function loadPublishedPackaging() {
+  try {
+    const response = await fetch(`./published-packaging.json?${Date.now()}`);
+    if (!response.ok) return;
+    const published = await response.json();
+    if (!Array.isArray(published)) return;
+    packagingItems = published.filter((item) => item?.id);
+  } catch {
+    /* published-packaging.json may be missing offline */
   }
 }
 
@@ -55,6 +69,7 @@ const synonyms = {
 const state = {
   selectedMaterialId: null,
   selectedRegulationId: null,
+  selectedPackagingId: null,
   currentStep: 0,
   currentView: "guide",
   currentIssue: 0,
@@ -88,6 +103,13 @@ const nodes = {
   regulationPageTitle: document.querySelector("#regulation-page-title"),
   regulationPageLead: document.querySelector("#regulation-page-lead"),
   regulationPageBody: document.querySelector("#regulation-page-body"),
+  packagingList: document.querySelector("#packaging-list"),
+  packagingMatchCount: document.querySelector("#packaging-match-count"),
+  packagingLayout: document.querySelector("#packaging-layout"),
+  packagingPageTitle: document.querySelector("#packaging-page-title"),
+  packagingPageLead: document.querySelector("#packaging-page-lead"),
+  packagingPageMeta: document.querySelector("#packaging-page-meta"),
+  packagingPageBody: document.querySelector("#packaging-page-body"),
   lessonTopic: document.querySelector("#lesson-topic"),
   lessonTitle: document.querySelector("#lesson-title"),
   lessonDescription: document.querySelector("#lesson-description"),
@@ -134,6 +156,7 @@ const nodes = {
   modeButtons: document.querySelectorAll(".mode-btn"),
   railLibrary: document.querySelector("#rail-library"),
   railRegulations: document.querySelector("#rail-regulations"),
+  railPackaging: document.querySelector("#rail-packaging"),
   railBottom: document.querySelector(".rail-bottom"),
   editLesson: document.querySelector("#edit-lesson"),
   saveLesson: document.querySelector("#save-lesson"),
@@ -197,6 +220,46 @@ function filteredRegulations() {
 
 function selectedRegulation() {
   return regulationById(state.selectedRegulationId) || filteredRegulations()[0] || regulations[0];
+}
+
+function packagingById(id) {
+  return packagingItems.find((item) => item.id === id);
+}
+
+function packagingText(item) {
+  return normalize([item.name, item.article, item.barcode, item.text, ...(item.images || []).map((img) => img.caption)].join(" "));
+}
+
+function scorePackaging(item, query) {
+  const terms = searchTerms(query);
+  if (!terms.length) return 1;
+  const haystack = packagingText(item);
+  const name = normalize(item.name);
+  const article = normalize(item.article);
+  const barcode = normalize(item.barcode);
+  return terms.reduce((score, term) => {
+    if (name.includes(term)) return score + 4;
+    if (article.includes(term) || barcode.includes(term)) return score + 3;
+    if (haystack.includes(term)) return score + 1;
+    return score;
+  }, 0);
+}
+
+function filteredPackaging() {
+  return packagingItems
+    .map((item) => ({ item, score: scorePackaging(item, state.query) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.item);
+}
+
+function selectedPackaging() {
+  return packagingById(state.selectedPackagingId) || filteredPackaging()[0] || packagingItems[0];
+}
+
+function selectPackaging(id) {
+  state.selectedPackagingId = id;
+  renderShell();
 }
 
 function materialText(material) {
@@ -749,6 +812,74 @@ function renderRegulationPage() {
   nodes.regulationPageBody.innerHTML = `${link}${text}`;
 }
 
+function renderPackagingList(items) {
+  if (!nodes.packagingList) return;
+  if (!items.length) {
+    nodes.packagingList.innerHTML = `<div class="empty-state">Упаковка пока не добавлена.</div>`;
+    return;
+  }
+
+  nodes.packagingList.innerHTML = items
+    .map((item) => {
+      const active = item.id === state.selectedPackagingId ? " is-active" : "";
+      const meta = [item.article, item.barcode].filter(Boolean).join(" · ") || item.id;
+      return `<button class="material-card${active}" type="button" data-packaging="${item.id}">
+        <strong>${escapeHtml(item.name)}</strong>
+        <small>${escapeHtml(meta)}</small>
+      </button>`;
+    })
+    .join("");
+
+  nodes.packagingList.querySelectorAll("[data-packaging]").forEach((button) => {
+    button.addEventListener("click", () => selectPackaging(button.dataset.packaging));
+  });
+}
+
+function renderPackagingPage() {
+  if (!nodes.packagingPageTitle) return;
+  const item = selectedPackaging();
+  if (!item) {
+    nodes.packagingPageTitle.textContent = "Упаковка";
+    nodes.packagingPageLead.textContent = "Создайте карточки упаковки в конструкторе.";
+    if (nodes.packagingPageMeta) nodes.packagingPageMeta.innerHTML = "";
+    nodes.packagingPageBody.innerHTML = "";
+    return;
+  }
+
+  nodes.packagingPageTitle.textContent = item.name;
+  nodes.packagingPageLead.textContent = "Описание и фотографии упаковки.";
+  const metaParts = [];
+  if (item.article) metaParts.push(`<span><small>Артикул</small><strong>${escapeHtml(item.article)}</strong></span>`);
+  if (item.barcode) metaParts.push(`<span><small>Баркод</small><strong>${escapeHtml(item.barcode)}</strong></span>`);
+  if (nodes.packagingPageMeta) nodes.packagingPageMeta.innerHTML = metaParts.join("");
+
+  const text = item.text ? `<div class="regulation-page-text">${renderRichText(item.text)}</div>` : "";
+  const images = Array.isArray(item.images) ? item.images.filter((entry) => entry?.image) : [];
+  const gallery = images.length
+    ? `<div class="packaging-gallery">${images
+        .map(
+          (entry, index) => `<button class="packaging-gallery-item" type="button" data-packaging-image="${index}">
+            <img src="${escapeHtml(entry.image)}" alt="${escapeHtml(entry.caption || item.name)}" />
+            ${entry.caption ? `<span>${escapeHtml(entry.caption)}</span>` : ""}
+          </button>`
+        )
+        .join("")}</div>`
+    : "";
+
+  nodes.packagingPageBody.innerHTML = `${text}${gallery}`;
+  nodes.packagingPageBody.querySelectorAll("[data-packaging-image]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.packagingImage);
+      const entry = images[index];
+      if (!entry || !nodes.lightbox) return;
+      nodes.lightboxImage.src = entry.image;
+      nodes.lightboxImage.alt = entry.caption || item.name;
+      nodes.lightboxCaption.textContent = entry.caption || "";
+      nodes.lightbox.hidden = false;
+    });
+  });
+}
+
 function renderMaterialList(items) {
   if (!items.length) {
     nodes.materialList.innerHTML = `<div class="empty-state">По такому запросу пока ничего не найдено.</div>`;
@@ -931,6 +1062,17 @@ function renderShell() {
     return;
   }
 
+  if (state.mode === "packaging") {
+    const items = filteredPackaging();
+    if (nodes.packagingMatchCount) nodes.packagingMatchCount.textContent = String(items.length);
+    if (items.length && !items.some((item) => item.id === state.selectedPackagingId)) {
+      state.selectedPackagingId = items[0].id;
+    }
+    renderPackagingList(items);
+    renderPackagingPage();
+    return;
+  }
+
   const items = filteredMaterials();
   nodes.matchCount.textContent = String(items.length);
   nodes.materialsCount.textContent = String(materials.length);
@@ -971,10 +1113,12 @@ function setMode(mode) {
   state.mode = mode;
   const isLibrary = mode === "library";
   const isRegulations = mode === "regulations";
+  const isPackaging = mode === "packaging";
   const isTools = mode === "tools";
   const isDevelop = mode === "develop";
   nodes.libraryLayout.classList.toggle("hidden", !isLibrary);
   nodes.regulationsLayout?.classList.toggle("hidden", !isRegulations);
+  nodes.packagingLayout?.classList.toggle("hidden", !isPackaging);
   nodes.toolsLayout?.classList.toggle("hidden", !isTools);
   nodes.developLayout.classList.toggle("hidden", !isDevelop);
   document.querySelector(".topbar").classList.toggle("hidden", isDevelop || isTools);
@@ -983,9 +1127,11 @@ function setMode(mode) {
   });
   nodes.railLibrary?.classList.toggle("hidden", !isLibrary);
   nodes.railRegulations?.classList.toggle("hidden", !isRegulations);
+  nodes.railPackaging?.classList.toggle("hidden", !isPackaging);
   nodes.railBottom?.classList.toggle("hidden", isDevelop || isTools);
   if (nodes.topbarTitle) {
     if (isRegulations) nodes.topbarTitle.textContent = "Регламенты";
+    else if (isPackaging) nodes.topbarTitle.textContent = "Упаковка";
     else if (isTools) nodes.topbarTitle.textContent = "Инструменты";
     else nodes.topbarTitle.textContent = "Материалы";
   }
@@ -999,7 +1145,7 @@ function setMode(mode) {
   } else if (isLibrary) {
     syncVideoSource();
     renderLesson();
-  } else if (isRegulations) {
+  } else if (isRegulations || isPackaging) {
     nodes.sourceVideo.pause();
     renderShell();
   }
@@ -1164,6 +1310,14 @@ nodes.searchInput.addEventListener("input", (event) => {
     renderShell();
     return;
   }
+  if (state.mode === "packaging") {
+    const items = filteredPackaging();
+    if (items.length && !items.some((item) => item.id === state.selectedPackagingId)) {
+      state.selectedPackagingId = items[0].id;
+    }
+    renderShell();
+    return;
+  }
   const items = filteredMaterials();
   if (items.length && !items.some((material) => material.id === state.selectedMaterialId)) {
     state.selectedMaterialId = items[0].id;
@@ -1244,10 +1398,11 @@ nodes.sidebarToggle.addEventListener("click", () => setSidebarCollapsed(true));
 nodes.sidebarRestore.addEventListener("click", () => setSidebarCollapsed(false));
 
 async function bootstrap() {
-  await Promise.all([loadPublishedMaterials(), loadPublishedRegulations(), loadAuthUser()]);
+  await Promise.all([loadPublishedMaterials(), loadPublishedRegulations(), loadPublishedPackaging(), loadAuthUser()]);
   const params = new URLSearchParams(window.location.search);
   const lessonId = params.get("lesson");
   const regulationId = params.get("regulation");
+  const packagingId = params.get("packaging");
   if (lessonId && materials.some((material) => material.id === lessonId)) {
     state.selectedMaterialId = lessonId;
   } else if (!state.selectedMaterialId && materials[0]) {
@@ -1257,6 +1412,11 @@ async function bootstrap() {
     state.selectedRegulationId = regulationId;
   } else if (!state.selectedRegulationId && regulations[0]) {
     state.selectedRegulationId = regulations[0].id;
+  }
+  if (packagingId && packagingById(packagingId)) {
+    state.selectedPackagingId = packagingId;
+  } else if (!state.selectedPackagingId && packagingItems[0]) {
+    state.selectedPackagingId = packagingItems[0].id;
   }
   nodes.guideView?.classList.add("is-extended");
   renderShell();
@@ -1270,6 +1430,8 @@ async function bootstrap() {
   const mode = params.get("mode");
   if (mode === "regulations" || regulationId) {
     setMode("regulations");
+  } else if (mode === "packaging" || packagingId) {
+    setMode("packaging");
   } else if (mode === "tools") {
     setMode("tools");
   } else if (mode === "develop") {

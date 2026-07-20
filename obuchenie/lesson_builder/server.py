@@ -12,7 +12,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, redirect, request, send_file, send_from_directory, session
 
-from . import auth, export, pipeline, publish, regulations, storage
+from . import auth, export, packaging, pipeline, publish, regulations, storage
 from .deploy_site import auto_deploy
 from .ffmpeg_util import find_binary
 
@@ -352,6 +352,199 @@ def api_delete_regulation(regulation_id: str):
         )
     except FileNotFoundError:
         return jsonify({"error": "Опубликованный регламент не найден"}), 404
+    except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/published-packaging", methods=["OPTIONS"])
+def api_packaging_options_list():
+    return ("", 204)
+
+
+@app.route("/api/published-packaging/<item_id>", methods=["OPTIONS"])
+def api_packaging_options_item(item_id: str):
+    return ("", 204)
+
+
+@app.route("/api/packaging-drafts", methods=["OPTIONS"])
+def api_packaging_drafts_options_list():
+    return ("", 204)
+
+
+@app.route("/api/packaging-drafts/<item_id>", methods=["OPTIONS"])
+def api_packaging_drafts_options_item(item_id: str):
+    return ("", 204)
+
+
+@app.route("/api/packaging-drafts/<item_id>/publish", methods=["OPTIONS"])
+def api_packaging_publish_options(item_id: str):
+    return ("", 204)
+
+
+@app.route("/api/packaging-drafts/<item_id>/upload-image", methods=["OPTIONS"])
+def api_packaging_upload_options(item_id: str):
+    return ("", 204)
+
+
+@app.get("/api/packaging/catalog")
+@auth.require_login
+def api_packaging_catalog():
+    return jsonify(packaging.list_catalog())
+
+
+@app.get("/api/packaging-drafts")
+@auth.require_login
+def api_list_packaging_drafts():
+    return jsonify(packaging.list_drafts())
+
+
+@app.get("/api/published-packaging")
+@auth.require_login
+def api_list_packaging():
+    return jsonify(packaging.list_published())
+
+
+@app.post("/api/packaging-drafts")
+@auth.require_login
+def api_create_packaging_draft():
+    payload = request.get_json(silent=True) or {}
+    user = auth.current_user()
+    try:
+        item = packaging.create_draft(payload, user)
+        return jsonify({**item, "message": "Черновик упаковки сохранён."}), 201
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.put("/api/packaging-drafts/<item_id>")
+@auth.require_login
+def api_update_packaging_draft(item_id: str):
+    payload = request.get_json(silent=True) or {}
+    user = auth.current_user()
+    try:
+        packaging.guard_draft_write(user, item_id)
+        item = packaging.update_draft(item_id, payload, user)
+        return jsonify({**item, "message": "Черновик упаковки сохранён."})
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+    except FileNotFoundError:
+        return jsonify({"error": "Черновик упаковки не найден"}), 404
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.post("/api/packaging-drafts/<item_id>/publish")
+@auth.require_admin
+def api_publish_packaging_draft(item_id: str):
+    user = auth.current_user()
+    try:
+        item = packaging.publish_draft(item_id, user)
+        deploy_result = auto_deploy(item_id, packaging.deploy_files_for(item))
+        return jsonify(
+            {
+                **item,
+                "deployed": deploy_result.get("deployed", False),
+                "message": deploy_result.get("message") or "Упаковка опубликована.",
+            }
+        )
+    except FileNotFoundError:
+        return jsonify({"error": "Черновик упаковки не найден"}), 404
+    except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.put("/api/published-packaging/<item_id>")
+@auth.require_admin
+def api_update_packaging(item_id: str):
+    payload = request.get_json(silent=True) or {}
+    user = auth.current_user()
+    try:
+        item = packaging.update_published(item_id, payload, user)
+        deploy_result = auto_deploy(item_id, packaging.deploy_files_for(item))
+        return jsonify(
+            {
+                **item,
+                "deployed": deploy_result.get("deployed", False),
+                "message": deploy_result.get("message") or "Упаковка обновлена.",
+            }
+        )
+    except FileNotFoundError:
+        return jsonify({"error": "Опубликованная упаковка не найдена"}), 404
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.delete("/api/packaging-drafts/<item_id>")
+@auth.require_admin
+def api_delete_packaging_draft(item_id: str):
+    try:
+        item = packaging.delete_draft(item_id)
+        return jsonify({**item, "message": "Черновик упаковки удалён."})
+    except FileNotFoundError:
+        return jsonify({"error": "Черновик упаковки не найден"}), 404
+    except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.delete("/api/published-packaging/<item_id>")
+@auth.require_admin
+def api_delete_packaging(item_id: str):
+    try:
+        item = packaging.delete_published(item_id)
+        deploy_result = auto_deploy(item_id, ["published-packaging.json"])
+        return jsonify(
+            {
+                **item,
+                "deployed": deploy_result.get("deployed", False),
+                "message": deploy_result.get("message") or "Упаковка удалена из базы.",
+            }
+        )
+    except FileNotFoundError:
+        return jsonify({"error": "Опубликованная упаковка не найдена"}), 404
+    except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.post("/api/packaging-drafts/<item_id>/upload-image")
+@auth.require_login
+def api_upload_packaging_image(item_id: str):
+    user = auth.current_user()
+    try:
+        packaging.guard_draft_write(user, item_id)
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+
+    file = request.files.get("file")
+    if not file or not file.filename:
+        return jsonify({"error": "Файл изображения не передан."}), 400
+
+    try:
+        saved = packaging.save_image(item_id, file.read(), file.filename)
+        drafts = packaging.list_drafts()
+        draft = next((entry for entry in drafts if entry.get("id") == item_id), None)
+        if draft is None:
+            raise FileNotFoundError(f"Черновик упаковки не найден: {item_id}")
+        images = list(draft.get("images") or [])
+        images.append(saved)
+        updated = packaging.update_draft(item_id, {**draft, "images": images}, user)
+        return jsonify({**saved, "item": updated, "message": "Фото добавлено."})
+    except FileNotFoundError:
+        return jsonify({"error": "Сначала сохраните черновик упаковки."}), 404
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:  # noqa: BLE001
         traceback.print_exc()
         return jsonify({"error": str(exc)}), 500

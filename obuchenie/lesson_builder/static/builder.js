@@ -40,6 +40,9 @@ const state = {
   workspace: "lessons",
   regulations: [],
   selectedRegulationId: null,
+  packaging: [],
+  selectedPackagingId: null,
+  packagingImages: [],
   users: [],
   selectedUserLogin: null,
   isNewUser: false,
@@ -114,6 +117,23 @@ const nodes = {
   deleteRegulation: document.querySelector("#delete-regulation"),
   publishRegulation: document.querySelector("#publish-regulation"),
   unpublishRegulation: document.querySelector("#unpublish-regulation"),
+  packagingWorkspace: document.querySelector("#packaging-workspace"),
+  packagingList: document.querySelector("#packaging-list"),
+  packagingCount: document.querySelector("#packaging-count"),
+  packagingId: document.querySelector("#packaging-id"),
+  packagingName: document.querySelector("#packaging-name"),
+  packagingArticle: document.querySelector("#packaging-article"),
+  packagingBarcode: document.querySelector("#packaging-barcode"),
+  packagingText: document.querySelector("#packaging-text"),
+  packagingStatus: document.querySelector("#packaging-status"),
+  packagingPhotoGrid: document.querySelector("#packaging-photo-grid"),
+  packagingPhotoInput: document.querySelector("#packaging-photo-input"),
+  packagingAddPhoto: document.querySelector("#packaging-add-photo"),
+  newPackaging: document.querySelector("#new-packaging"),
+  savePackaging: document.querySelector("#save-packaging"),
+  deletePackaging: document.querySelector("#delete-packaging"),
+  publishPackaging: document.querySelector("#publish-packaging"),
+  unpublishPackaging: document.querySelector("#unpublish-packaging"),
   usersWorkspace: document.querySelector("#users-workspace"),
   usersList: document.querySelector("#users-list"),
   usersCount: document.querySelector("#users-count"),
@@ -142,7 +162,8 @@ let pasteHandled = false;
 let saveChain = Promise.resolve();
 let savedSelectionRange = null;
 
-const RICH_FIELDS = () => [nodes.stepWhy, nodes.stepComment, nodes.stepAction, nodes.stepResult].filter(Boolean);
+const RICH_FIELDS = () =>
+  [nodes.stepWhy, nodes.stepComment, nodes.stepAction, nodes.stepResult, nodes.packagingText].filter(Boolean);
 
 function plainTextFromHtml(value) {
   const div = document.createElement("div");
@@ -227,7 +248,7 @@ function applyBoldFormat() {
   next.selectNodeContents(wrapper);
   selection.addRange(next);
   savedSelectionRange = next.cloneRange();
-  scheduleSaveStep();
+  if (field !== nodes.packagingText) scheduleSaveStep();
   updateFormatBubble();
   nodes.statusMessage.textContent = "Выделенный фрагмент сделан жирным.";
 }
@@ -256,7 +277,7 @@ function applyNormalFormat() {
   } else {
     savedSelectionRange = null;
   }
-  scheduleSaveStep();
+  if (field !== nodes.packagingText) scheduleSaveStep();
   updateFormatBubble();
   nodes.statusMessage.textContent = "Жирное форматирование снято с выделенного фрагмента.";
 }
@@ -1014,6 +1035,204 @@ async function unpublishRegulationItem() {
   nodes.regulationStatus.textContent = `Снято с публикации: ${item.title}`;
 }
 
+function packagingAssetUrl(path) {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  const clean = String(path).replace(/^\.\//, "");
+  return siteHomeUrl().replace(/\/?$/, "/") + clean;
+}
+
+function selectedPackaging() {
+  return state.packaging.find((item) => item.id === state.selectedPackagingId) || null;
+}
+
+function renderPackagingPhotos() {
+  if (!nodes.packagingPhotoGrid) return;
+  const images = state.packagingImages || [];
+  if (!images.length) {
+    nodes.packagingPhotoGrid.innerHTML = `<p class="status-text">Фото пока нет.</p>`;
+    return;
+  }
+  nodes.packagingPhotoGrid.innerHTML = images
+    .map(
+      (item, index) => `<div class="packaging-photo-card" data-index="${index}">
+        <img src="${escapeHtml(packagingAssetUrl(item.image))}" alt="" />
+        <button class="ghost-btn" type="button" data-remove-photo="${index}" title="Удалить">✕</button>
+        <input type="text" value="${escapeHtml(item.caption || "")}" placeholder="Подпись" data-caption="${index}" />
+      </div>`
+    )
+    .join("");
+
+  nodes.packagingPhotoGrid.querySelectorAll("[data-remove-photo]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.removePhoto);
+      state.packagingImages.splice(index, 1);
+      renderPackagingPhotos();
+    });
+  });
+  nodes.packagingPhotoGrid.querySelectorAll("[data-caption]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const index = Number(input.dataset.caption);
+      if (!state.packagingImages[index]) return;
+      state.packagingImages[index].caption = input.value.trim();
+    });
+  });
+}
+
+function fillPackagingForm(item) {
+  nodes.packagingId.value = item?.id || "";
+  nodes.packagingName.value = item?.name || "";
+  nodes.packagingArticle.value = item?.article || "";
+  nodes.packagingBarcode.value = item?.barcode || "";
+  setRichHtml(nodes.packagingText, item?.text || "");
+  state.packagingImages = Array.isArray(item?.images) ? item.images.map((entry) => ({ ...entry })) : [];
+  renderPackagingPhotos();
+  const status = item?.status === "published" ? "Опубликован" : item?.id ? "Черновик" : "";
+  nodes.packagingStatus.textContent = item
+    ? `${status ? `${status}: ` : ""}${item.name}`
+    : "Новый черновик. Заполните поля и нажмите «Сохранить».";
+  if (nodes.deletePackaging) {
+    nodes.deletePackaging.classList.toggle("hidden", !isAdmin() || !item?.id);
+  }
+  if (nodes.publishPackaging) {
+    nodes.publishPackaging.classList.toggle("hidden", !isAdmin() || !item?.id || item.status === "published");
+  }
+  if (nodes.unpublishPackaging) {
+    nodes.unpublishPackaging.classList.toggle("hidden", !isAdmin() || item?.status !== "published");
+  }
+}
+
+function renderPackagingWorkspace() {
+  if (!nodes.packagingList) return;
+  nodes.packagingCount.textContent = String(state.packaging.length);
+
+  if (!state.packaging.length) {
+    nodes.packagingList.innerHTML = `<p class="status-text">Пока нет упаковки. Нажмите «+ Упаковка».</p>`;
+    fillPackagingForm(null);
+    return;
+  }
+
+  if (!state.selectedPackagingId || !selectedPackaging()) {
+    state.selectedPackagingId = state.packaging[0].id;
+  }
+
+  nodes.packagingList.innerHTML = state.packaging
+    .map((item) => {
+      const active = item.id === state.selectedPackagingId ? " is-active" : "";
+      const status = item.status === "published" ? "опубликован" : "черновик";
+      const meta = [item.article, item.barcode].filter(Boolean).join(" · ") || item.id;
+      return `<button class="regulation-card-btn${active}" type="button" data-packaging="${escapeHtml(item.id)}">
+        <strong>${escapeHtml(item.name)}</strong>
+        <span>${escapeHtml(meta)} · ${status}</span>
+      </button>`;
+    })
+    .join("");
+
+  nodes.packagingList.querySelectorAll(".regulation-card-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedPackagingId = button.dataset.packaging;
+      renderPackagingWorkspace();
+    });
+  });
+
+  fillPackagingForm(selectedPackaging());
+}
+
+async function loadPackaging() {
+  state.packaging = await api("/api/packaging/catalog");
+  renderPackagingWorkspace();
+}
+
+function collectPackagingPayload() {
+  return {
+    id: nodes.packagingId.value.trim(),
+    name: nodes.packagingName.value.trim(),
+    article: nodes.packagingArticle.value.trim(),
+    barcode: nodes.packagingBarcode.value.trim(),
+    text: getRichHtml(nodes.packagingText),
+    images: (state.packagingImages || []).map((entry) => ({
+      image: entry.image,
+      caption: entry.caption || "",
+    })),
+  };
+}
+
+function packagingHasDraft(id) {
+  return state.packaging.some((item) => item.id === id);
+}
+
+async function savePackagingItem() {
+  const payload = collectPackagingPayload();
+  const existingId = state.selectedPackagingId;
+  const current = selectedPackaging();
+  const isNew = !existingId || !current;
+  const saved = isNew
+    ? await api("/api/packaging-drafts", { method: "POST", body: JSON.stringify(payload) })
+    : await api(`/api/packaging-drafts/${encodeURIComponent(existingId)}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+  state.selectedPackagingId = saved.id;
+  await loadPackaging();
+  nodes.packagingStatus.textContent = saved.message || `Черновик сохранён: ${saved.name}`;
+}
+
+async function publishPackagingItem() {
+  const item = selectedPackaging();
+  if (!item?.id) return;
+  await savePackagingItem();
+  const result = await api(`/api/packaging-drafts/${encodeURIComponent(item.id)}/publish`, { method: "POST" });
+  await loadPackaging();
+  nodes.packagingStatus.textContent = result.message || `Опубликовано: ${item.name}`;
+}
+
+async function deletePackagingItem() {
+  const item = selectedPackaging();
+  if (!item || !confirm(`Удалить упаковку «${item.name}»?`)) return;
+  if (item.status === "published") {
+    await api(`/api/published-packaging/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+    if (packagingHasDraft(item.id)) {
+      await api(`/api/packaging-drafts/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+    }
+  } else {
+    await api(`/api/packaging-drafts/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+  }
+  state.selectedPackagingId = null;
+  await loadPackaging();
+}
+
+async function unpublishPackagingItem() {
+  const item = selectedPackaging();
+  if (!item?.id || item.status !== "published") return;
+  if (!confirm(`Снять с публикации «${item.name}»? Черновик останется в конструкторе.`)) return;
+  await api(`/api/published-packaging/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+  await loadPackaging();
+  nodes.packagingStatus.textContent = `Снято с публикации: ${item.name}`;
+}
+
+async function uploadPackagingPhotos(files) {
+  const item = selectedPackaging();
+  if (!item?.id) {
+    alert("Сначала сохраните черновик упаковки.");
+    return;
+  }
+  for (const file of files) {
+    const body = new FormData();
+    body.append("file", file);
+    const response = await fetch(appUrl(`/api/packaging-drafts/${encodeURIComponent(item.id)}/upload-image`), {
+      method: "POST",
+      body,
+      credentials: "include",
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Не удалось загрузить фото.");
+    }
+  }
+  await loadPackaging();
+  nodes.packagingStatus.textContent = "Фото добавлены.";
+}
+
 function selectedUser() {
   return state.users.find((item) => item.login === state.selectedUserLogin) || null;
 }
@@ -1156,12 +1375,16 @@ function setWorkspace(workspace) {
   nodes.emptyState.classList.toggle("hidden", !isLessons || state.project);
   nodes.editor.classList.toggle("hidden", !isLessons || !state.project);
   nodes.regulationsWorkspace?.classList.toggle("hidden", workspace !== "regulations");
+  nodes.packagingWorkspace?.classList.toggle("hidden", workspace !== "packaging");
   nodes.usersWorkspace?.classList.toggle("hidden", !isUsers);
   document.querySelector(".project-list-wrap")?.classList.toggle("hidden", !isLessons);
   document.querySelector("#new-project")?.classList.toggle("hidden", !isLessons);
 
   if (workspace === "regulations") {
     renderRegulationsWorkspace();
+  }
+  if (workspace === "packaging") {
+    renderPackagingWorkspace();
   }
   if (isUsers) {
     renderUsersWorkspace();
@@ -2024,7 +2247,7 @@ renderColorToolbar();
 initCanvasEditor();
 loadHealth().finally(() => {
   ensureAuth()
-    .then(() => Promise.all([loadRegulations(), loadUsers()]))
+    .then(() => Promise.all([loadRegulations(), loadPackaging(), loadUsers()]))
     .finally(() => {
       loadProjects().then(async () => {
         const params = new URLSearchParams(window.location.search);
@@ -2079,6 +2302,59 @@ nodes.unpublishRegulation?.addEventListener("click", async () => {
 nodes.deleteRegulation?.addEventListener("click", async () => {
   try {
     await deleteRegulationItem();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+nodes.newPackaging?.addEventListener("click", () => {
+  state.selectedPackagingId = null;
+  fillPackagingForm(null);
+  nodes.packagingName.focus();
+});
+
+nodes.savePackaging?.addEventListener("click", async () => {
+  try {
+    await savePackagingItem();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+nodes.publishPackaging?.addEventListener("click", async () => {
+  try {
+    await publishPackagingItem();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+nodes.unpublishPackaging?.addEventListener("click", async () => {
+  try {
+    await unpublishPackagingItem();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+nodes.deletePackaging?.addEventListener("click", async () => {
+  try {
+    await deletePackagingItem();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+nodes.packagingAddPhoto?.addEventListener("click", () => {
+  nodes.packagingPhotoInput?.click();
+});
+
+nodes.packagingPhotoInput?.addEventListener("change", async () => {
+  const files = [...(nodes.packagingPhotoInput.files || [])];
+  nodes.packagingPhotoInput.value = "";
+  if (!files.length) return;
+  try {
+    await uploadPackagingPhotos(files);
   } catch (error) {
     alert(error.message);
   }

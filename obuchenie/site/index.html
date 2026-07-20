@@ -7,7 +7,7 @@
     <link rel="icon" href="./favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
-    <link rel="stylesheet" href="./styles.css?v=20260708a" />
+    <link rel="stylesheet" href="./styles.css?v=20260720a" />
   </head>
   <body>
     <div class="app-shell">
@@ -26,6 +26,7 @@
         <nav class="mode-switch" aria-label="Режим работы">
           <button class="mode-btn is-active" type="button" data-mode="library">База</button>
           <button class="mode-btn" type="button" data-mode="regulations">Регламенты</button>
+          <button class="mode-btn" type="button" data-mode="packaging">Упаковка</button>
           <button class="mode-btn" type="button" data-mode="tools">Инструменты</button>
           <button class="mode-btn" type="button" data-mode="develop">Создать урок</button>
         </nav>
@@ -55,6 +56,16 @@
               <strong id="regulations-match-count">0</strong>
             </div>
             <div class="material-list" id="regulation-list"></div>
+          </section>
+        </div>
+
+        <div class="rail-scroll hidden" id="rail-packaging">
+          <section class="rail-section rail-materials" aria-label="Список упаковки">
+            <div class="rail-title">
+              <span>Упаковка</span>
+              <strong id="packaging-match-count">0</strong>
+            </div>
+            <div class="material-list" id="packaging-list"></div>
           </section>
         </div>
 
@@ -197,6 +208,18 @@
           </article>
         </section>
 
+        <section class="regulations-layout packaging-layout hidden" id="packaging-layout" aria-label="Упаковка">
+          <article class="lesson-card regulation-card packaging-card">
+            <header class="lesson-header">
+              <p class="eyebrow">Справочник</p>
+              <h2 id="packaging-page-title">Упаковка</h2>
+              <p class="lesson-description" id="packaging-page-lead">Выберите позицию в списке слева.</p>
+              <div class="packaging-meta" id="packaging-page-meta"></div>
+            </header>
+            <div class="regulation-page-body packaging-page-body" id="packaging-page-body"></div>
+          </article>
+        </section>
+
         <section class="tools-layout hidden" id="tools-layout" aria-label="Инструменты Nostradamus">
           <div class="tools-card">
             <header class="tools-header">
@@ -272,6 +295,6 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script type="module" src="./tools/tools.js?v=20260708a"></script>
-    <script src="./app.js?v=20260708a"></script>
+    <script src="./app.js?v=20260720a"></script>
   </body>
 </html>

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Разработка урока — X-active</title>
-    <link rel="stylesheet" href="static/builder.css?v=20260704g" />
+    <link rel="stylesheet" href="static/builder.css?v=20260720a" />
   </head>
   <body>
     <div class="app" id="app-shell">
@@ -26,6 +26,7 @@
           <nav class="workspace-switch" aria-label="Раздел конструктора">
             <button class="workspace-btn is-active" type="button" data-workspace="lessons">Уроки</button>
             <button class="workspace-btn" type="button" data-workspace="regulations">Регламенты</button>
+            <button class="workspace-btn" type="button" data-workspace="packaging">Упаковка</button>
             <button class="workspace-btn hidden" type="button" data-workspace="users" id="workspace-users-btn">Пользователи</button>
           </nav>
 
@@ -235,6 +236,54 @@
           </div>
         </section>
 
+        <section class="packaging-workspace hidden" id="packaging-workspace">
+          <header class="editor-header">
+            <div>
+              <p class="eyebrow">Справочник</p>
+              <h2 class="packaging-title">Упаковка</h2>
+            </div>
+            <div class="header-actions">
+              <button class="primary-btn" id="new-packaging" type="button">+ Упаковка</button>
+              <button class="secondary-btn" id="save-packaging" type="button">Сохранить черновик</button>
+              <button class="primary-btn hidden" id="publish-packaging" type="button">Опубликовать</button>
+              <button class="ghost-btn hidden" id="unpublish-packaging" type="button">Снять с публикации</button>
+              <button class="danger-btn hidden" id="delete-packaging" type="button">Удалить</button>
+            </div>
+          </header>
+
+          <div class="regulations-layout packaging-layout">
+            <aside class="panel packaging-list-panel">
+              <div class="panel-head">
+                <h2>Список</h2>
+                <span id="packaging-count">0</span>
+              </div>
+              <div class="regulations-list" id="packaging-list"></div>
+            </aside>
+
+            <section class="panel packaging-editor-panel">
+              <div class="meta-grid packaging-editor-grid">
+                <label>Идентификатор<input id="packaging-id" type="text" placeholder="korob-a5" /></label>
+                <label class="span-2">Название<input id="packaging-name" type="text" placeholder="Короб A5 с вкладышем" /></label>
+                <label>Артикул<input id="packaging-article" type="text" placeholder="ART-12345" /></label>
+                <label class="span-2">Баркод<input id="packaging-barcode" type="text" placeholder="4601234567890" /></label>
+                <label class="span-3">Описание
+                  <div id="packaging-text" class="rich-field packaging-rich-field" contenteditable="true" data-placeholder="Текст описания. Выделите фрагмент — появится панель жирного текста."></div>
+                </label>
+                <div class="span-3 packaging-photos">
+                  <div class="panel-head packaging-photos-head">
+                    <h2>Фотографии</h2>
+                    <button class="secondary-btn" id="packaging-add-photo" type="button">+ Фото</button>
+                  </div>
+                  <input id="packaging-photo-input" type="file" accept="image/*" multiple hidden />
+                  <div class="packaging-photo-grid" id="packaging-photo-grid"></div>
+                  <p class="hint-inline">Сначала сохраните черновик, затем добавляйте фото.</p>
+                </div>
+              </div>
+              <p class="status-text" id="packaging-status">Выберите упаковку или создайте новую.</p>
+            </section>
+          </div>
+        </section>
+
         <section class="users-workspace hidden" id="users-workspace">
           <header class="editor-header">
             <div>
@@ -299,7 +348,7 @@
       <button type="button" id="format-normal-btn" class="format-normal-btn" title="Обычный текст">S</button>
     </div>
 
-    <script src="static/canvas-editor.js?v=20260704g"></script>
-    <script src="static/builder.js?v=20260704g"></script>
+    <script src="static/canvas-editor.js?v=20260720a"></script>
+    <script src="static/builder.js?v=20260720a"></script>
   </body>
 </html>

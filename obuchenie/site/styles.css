@@ -338,7 +338,7 @@ button {
 
 .mode-switch {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1606,6 +1606,61 @@ button {
 
 .regulations-layout .regulation-card {
   min-height: calc(100vh - 88px);
+}
+
+.packaging-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin-top: 12px;
+}
+
+.packaging-meta span {
+  display: grid;
+  gap: 2px;
+  min-width: 140px;
+}
+
+.packaging-meta small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.packaging-meta strong {
+  font-size: 15px;
+}
+
+.packaging-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.packaging-gallery-item {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  text-align: left;
+  cursor: zoom-in;
+}
+
+.packaging-gallery-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.packaging-gallery-item span {
+  padding: 0 10px 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .empty-state.light-empty {
