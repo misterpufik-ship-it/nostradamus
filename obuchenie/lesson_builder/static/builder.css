@@ -1253,6 +1253,37 @@ dialog menu {
   font-size: 13px;
 }
 
+.packaging-multi-field,
+.packaging-types-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.packaging-multi-list {
+  display: grid;
+  gap: 8px;
+}
+
+.packaging-multi-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.packaging-multi-row input {
+  width: 100%;
+}
+
+.packaging-editor-grid select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  background: #fff;
+}
+
 .workspace-switch {
   flex-wrap: wrap;
 }

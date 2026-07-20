@@ -228,7 +228,18 @@ function packagingById(id) {
 }
 
 function packagingText(item) {
-  return normalize([item.name, item.article, item.barcode, item.text, ...(item.images || []).map((img) => img.caption)].join(" "));
+  const articles = [].concat(item.articles || item.article || []).filter(Boolean);
+  const barcodes = [].concat(item.barcodes || item.barcode || []).filter(Boolean);
+  return normalize(
+    [
+      item.name,
+      item.packagingType,
+      ...articles,
+      ...barcodes,
+      item.text,
+      ...(item.images || []).map((img) => img.caption),
+    ].join(" ")
+  );
 }
 
 function scorePackaging(item, query) {
@@ -236,11 +247,13 @@ function scorePackaging(item, query) {
   if (!terms.length) return 1;
   const haystack = packagingText(item);
   const name = normalize(item.name);
-  const article = normalize(item.article);
-  const barcode = normalize(item.barcode);
+  const type = normalize(item.packagingType);
+  const articles = normalize([].concat(item.articles || item.article || []).join(" "));
+  const barcodes = normalize([].concat(item.barcodes || item.barcode || []).join(" "));
   return terms.reduce((score, term) => {
     if (name.includes(term)) return score + 4;
-    if (article.includes(term) || barcode.includes(term)) return score + 3;
+    if (type.includes(term)) return score + 3;
+    if (articles.includes(term) || barcodes.includes(term)) return score + 3;
     if (haystack.includes(term)) return score + 1;
     return score;
   }, 0);
@@ -823,7 +836,9 @@ function renderPackagingList(items) {
   nodes.packagingList.innerHTML = items
     .map((item) => {
       const active = item.id === state.selectedPackagingId ? " is-active" : "";
-      const meta = [item.article, item.barcode].filter(Boolean).join(" · ") || item.id;
+      const articles = [].concat(item.articles || item.article || []).filter(Boolean);
+      const barcodes = [].concat(item.barcodes || item.barcode || []).filter(Boolean);
+      const meta = [item.packagingType, articles[0], barcodes[0]].filter(Boolean).join(" · ") || item.id;
       return `<button class="material-card${active}" type="button" data-packaging="${item.id}">
         <strong>${escapeHtml(item.name)}</strong>
         <small>${escapeHtml(meta)}</small>
@@ -848,10 +863,25 @@ function renderPackagingPage() {
   }
 
   nodes.packagingPageTitle.textContent = item.name;
-  nodes.packagingPageLead.textContent = "Описание и фотографии упаковки.";
+  nodes.packagingPageLead.textContent = item.packagingType
+    ? `Тип: ${item.packagingType}`
+    : "Описание и фотографии упаковки.";
+  const articles = [].concat(item.articles || item.article || []).filter(Boolean);
+  const barcodes = [].concat(item.barcodes || item.barcode || []).filter(Boolean);
   const metaParts = [];
-  if (item.article) metaParts.push(`<span><small>Артикул</small><strong>${escapeHtml(item.article)}</strong></span>`);
-  if (item.barcode) metaParts.push(`<span><small>Баркод</small><strong>${escapeHtml(item.barcode)}</strong></span>`);
+  if (item.packagingType) {
+    metaParts.push(`<span><small>Тип</small><strong>${escapeHtml(item.packagingType)}</strong></span>`);
+  }
+  if (articles.length) {
+    metaParts.push(
+      `<span><small>Артикул${articles.length > 1 ? "ы" : ""}</small><strong>${escapeHtml(articles.join(", "))}</strong></span>`
+    );
+  }
+  if (barcodes.length) {
+    metaParts.push(
+      `<span><small>Баркод${barcodes.length > 1 ? "ы" : ""}</small><strong>${escapeHtml(barcodes.join(", "))}</strong></span>`
+    );
+  }
   if (nodes.packagingPageMeta) nodes.packagingPageMeta.innerHTML = metaParts.join("");
 
   const text = item.text ? `<div class="regulation-page-text">${renderRichText(item.text)}</div>` : "";

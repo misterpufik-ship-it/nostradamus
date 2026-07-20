@@ -43,6 +43,9 @@ const state = {
   packaging: [],
   selectedPackagingId: null,
   packagingImages: [],
+  packagingArticles: [""],
+  packagingBarcodes: [""],
+  packagingTypes: [],
   users: [],
   selectedUserLogin: null,
   isNewUser: false,
@@ -122,8 +125,14 @@ const nodes = {
   packagingCount: document.querySelector("#packaging-count"),
   packagingId: document.querySelector("#packaging-id"),
   packagingName: document.querySelector("#packaging-name"),
-  packagingArticle: document.querySelector("#packaging-article"),
-  packagingBarcode: document.querySelector("#packaging-barcode"),
+  packagingType: document.querySelector("#packaging-type"),
+  packagingArticlesList: document.querySelector("#packaging-articles-list"),
+  packagingBarcodesList: document.querySelector("#packaging-barcodes-list"),
+  packagingTypesList: document.querySelector("#packaging-types-list"),
+  packagingAddArticle: document.querySelector("#packaging-add-article"),
+  packagingAddBarcode: document.querySelector("#packaging-add-barcode"),
+  packagingAddType: document.querySelector("#packaging-add-type"),
+  packagingSaveTypes: document.querySelector("#packaging-save-types"),
   packagingText: document.querySelector("#packaging-text"),
   packagingStatus: document.querySelector("#packaging-status"),
   packagingPhotoGrid: document.querySelector("#packaging-photo-grid"),
@@ -1046,6 +1055,75 @@ function selectedPackaging() {
   return state.packaging.find((item) => item.id === state.selectedPackagingId) || null;
 }
 
+function normalizePackagingValues(values, legacy) {
+  const list = [];
+  if (Array.isArray(values)) {
+    values.forEach((entry) => {
+      const text = String(entry || "").trim();
+      if (text && !list.includes(text)) list.push(text);
+    });
+  } else if (typeof values === "string" && values.trim()) {
+    list.push(values.trim());
+  }
+  if (!list.length && legacy) {
+    const text = String(legacy || "").trim();
+    if (text) list.push(text);
+  }
+  return list.length ? list : [""];
+}
+
+function readMultiList(container) {
+  if (!container) return [];
+  return [...container.querySelectorAll("input[type='text']")]
+    .map((input) => input.value.trim())
+    .filter(Boolean);
+}
+
+function renderMultiList(container, values, placeholder) {
+  if (!container) return;
+  const rows = values.length ? values : [""];
+  container.innerHTML = rows
+    .map(
+      (value, index) => `<div class="packaging-multi-row" data-index="${index}">
+        <input type="text" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" />
+        <button class="ghost-btn" type="button" data-remove-row="${index}" title="Удалить">✕</button>
+      </div>`
+    )
+    .join("");
+  container.querySelectorAll("[data-remove-row]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.removeRow);
+      const current = readMultiList(container);
+      current.splice(index, 1);
+      renderMultiList(container, current.length ? current : [""], placeholder);
+    });
+  });
+}
+
+function renderPackagingTypeSelect(selected) {
+  if (!nodes.packagingType) return;
+  const types = state.packagingTypes.length
+    ? state.packagingTypes
+    : ["Курьер пакет", "Зип Пакет", "Коробка", "Заводская упаковка", "Другое"];
+  const current = selected || "";
+  const options = [`<option value="">Тип упаковки</option>`].concat(
+    types.map((type) => {
+      const active = type === current ? " selected" : "";
+      return `<option value="${escapeHtml(type)}"${active}>${escapeHtml(type)}</option>`;
+    })
+  );
+  if (current && !types.includes(current)) {
+    options.push(`<option value="${escapeHtml(current)}" selected>${escapeHtml(current)}</option>`);
+  }
+  nodes.packagingType.innerHTML = options.join("");
+}
+
+function renderPackagingTypesEditor() {
+  if (!nodes.packagingTypesList) return;
+  const types = state.packagingTypes.length ? state.packagingTypes : [""];
+  renderMultiList(nodes.packagingTypesList, types, "Название типа");
+}
+
 function renderPackagingPhotos() {
   if (!nodes.packagingPhotoGrid) return;
   const images = state.packagingImages || [];
@@ -1082,8 +1160,11 @@ function renderPackagingPhotos() {
 function fillPackagingForm(item) {
   nodes.packagingId.value = item?.id || "";
   nodes.packagingName.value = item?.name || "";
-  nodes.packagingArticle.value = item?.article || "";
-  nodes.packagingBarcode.value = item?.barcode || "";
+  renderPackagingTypeSelect(item?.packagingType || "");
+  state.packagingArticles = normalizePackagingValues(item?.articles, item?.article);
+  state.packagingBarcodes = normalizePackagingValues(item?.barcodes, item?.barcode);
+  renderMultiList(nodes.packagingArticlesList, state.packagingArticles, "ART-12345");
+  renderMultiList(nodes.packagingBarcodesList, state.packagingBarcodes, "4601234567890");
   setRichHtml(nodes.packagingText, item?.text || "");
   state.packagingImages = Array.isArray(item?.images) ? item.images.map((entry) => ({ ...entry })) : [];
   renderPackagingPhotos();
@@ -1105,6 +1186,7 @@ function fillPackagingForm(item) {
 function renderPackagingWorkspace() {
   if (!nodes.packagingList) return;
   nodes.packagingCount.textContent = String(state.packaging.length);
+  renderPackagingTypesEditor();
 
   if (!state.packaging.length) {
     nodes.packagingList.innerHTML = `<p class="status-text">Пока нет упаковки. Нажмите «+ Упаковка».</p>`;
@@ -1120,7 +1202,9 @@ function renderPackagingWorkspace() {
     .map((item) => {
       const active = item.id === state.selectedPackagingId ? " is-active" : "";
       const status = item.status === "published" ? "опубликован" : "черновик";
-      const meta = [item.article, item.barcode].filter(Boolean).join(" · ") || item.id;
+      const articles = normalizePackagingValues(item.articles, item.article).filter(Boolean);
+      const barcodes = normalizePackagingValues(item.barcodes, item.barcode).filter(Boolean);
+      const meta = [item.packagingType, articles[0], barcodes[0]].filter(Boolean).join(" · ") || item.id;
       return `<button class="regulation-card-btn${active}" type="button" data-packaging="${escapeHtml(item.id)}">
         <strong>${escapeHtml(item.name)}</strong>
         <span>${escapeHtml(meta)} · ${status}</span>
@@ -1138,17 +1222,29 @@ function renderPackagingWorkspace() {
   fillPackagingForm(selectedPackaging());
 }
 
+async function loadPackagingTypes() {
+  const payload = await api("/api/packaging-types");
+  state.packagingTypes = Array.isArray(payload.types) ? payload.types : [];
+  renderPackagingTypeSelect(nodes.packagingType?.value || "");
+  renderPackagingTypesEditor();
+}
+
 async function loadPackaging() {
   state.packaging = await api("/api/packaging/catalog");
   renderPackagingWorkspace();
 }
 
 function collectPackagingPayload() {
+  const packagingType = nodes.packagingType?.value.trim() || "";
+  if (!packagingType || packagingType === "Тип упаковки") {
+    throw new Error("Выберите тип упаковки.");
+  }
   return {
     id: nodes.packagingId.value.trim(),
     name: nodes.packagingName.value.trim(),
-    article: nodes.packagingArticle.value.trim(),
-    barcode: nodes.packagingBarcode.value.trim(),
+    packagingType,
+    articles: readMultiList(nodes.packagingArticlesList),
+    barcodes: readMultiList(nodes.packagingBarcodesList),
     text: getRichHtml(nodes.packagingText),
     images: (state.packagingImages || []).map((entry) => ({
       image: entry.image,
@@ -1175,6 +1271,20 @@ async function savePackagingItem() {
   state.selectedPackagingId = saved.id;
   await loadPackaging();
   nodes.packagingStatus.textContent = saved.message || `Черновик сохранён: ${saved.name}`;
+}
+
+async function savePackagingTypes() {
+  const types = readMultiList(nodes.packagingTypesList);
+  if (!types.length) throw new Error("Добавьте хотя бы один тип упаковки.");
+  const result = await api("/api/packaging-types", {
+    method: "PUT",
+    body: JSON.stringify({ types }),
+  });
+  state.packagingTypes = result.types || types;
+  const selected = nodes.packagingType?.value || "";
+  renderPackagingTypeSelect(selected);
+  renderPackagingTypesEditor();
+  nodes.packagingStatus.textContent = result.message || "Типы упаковки сохранены.";
 }
 
 async function publishPackagingItem() {
@@ -2247,7 +2357,7 @@ renderColorToolbar();
 initCanvasEditor();
 loadHealth().finally(() => {
   ensureAuth()
-    .then(() => Promise.all([loadRegulations(), loadPackaging(), loadUsers()]))
+    .then(() => Promise.all([loadRegulations(), loadPackagingTypes(), loadPackaging(), loadUsers()]))
     .finally(() => {
       loadProjects().then(async () => {
         const params = new URLSearchParams(window.location.search);
@@ -2351,6 +2461,32 @@ nodes.deletePackaging?.addEventListener("click", async () => {
 
 nodes.packagingAddPhoto?.addEventListener("click", () => {
   nodes.packagingPhotoInput?.click();
+});
+
+nodes.packagingAddArticle?.addEventListener("click", () => {
+  const current = readMultiList(nodes.packagingArticlesList);
+  current.push("");
+  renderMultiList(nodes.packagingArticlesList, current, "ART-12345");
+});
+
+nodes.packagingAddBarcode?.addEventListener("click", () => {
+  const current = readMultiList(nodes.packagingBarcodesList);
+  current.push("");
+  renderMultiList(nodes.packagingBarcodesList, current, "4601234567890");
+});
+
+nodes.packagingAddType?.addEventListener("click", () => {
+  const current = readMultiList(nodes.packagingTypesList);
+  current.push("");
+  renderMultiList(nodes.packagingTypesList, current, "Название типа");
+});
+
+nodes.packagingSaveTypes?.addEventListener("click", async () => {
+  try {
+    await savePackagingTypes();
+  } catch (error) {
+    alert(error.message);
+  }
 });
 
 nodes.packagingPhotoInput?.addEventListener("change", async () => {

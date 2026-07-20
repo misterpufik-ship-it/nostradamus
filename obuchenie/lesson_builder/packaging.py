@@ -14,8 +14,16 @@ ROOT = Path(__file__).resolve().parent
 SITE_ROOT = ROOT.parent / "site"
 DRAFTS_FILE = ROOT / "packaging-drafts.json"
 PUBLISHED_FILE = SITE_ROOT / "published-packaging.json"
+TYPES_FILE = ROOT / "packaging-types.json"
 ASSETS_DIR = SITE_ROOT / "assets" / "packaging"
 _IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
+DEFAULT_PACKAGING_TYPES = [
+    "Курьер пакет",
+    "Зип Пакет",
+    "Коробка",
+    "Заводская упаковка",
+    "Другое",
+]
 
 
 def _load_file(path: Path) -> list[dict[str, Any]]:
@@ -32,6 +40,48 @@ def _save_file(path: Path, items: list[dict[str, Any]]) -> None:
         encoding="utf-8",
         newline="\n",
     )
+
+
+def _normalize_string_list(raw: Any, *, legacy: Any = None) -> list[str]:
+    values: list[str] = []
+    if isinstance(raw, list):
+        for entry in raw:
+            text = str(entry or "").strip()
+            if text and text not in values:
+                values.append(text)
+    elif isinstance(raw, str) and raw.strip():
+        values.append(raw.strip())
+
+    if not values and legacy is not None:
+        legacy_text = str(legacy or "").strip()
+        if legacy_text:
+            values.append(legacy_text)
+    return values
+
+
+def list_types() -> list[str]:
+    if not TYPES_FILE.is_file():
+        return list(DEFAULT_PACKAGING_TYPES)
+    raw = json.loads(TYPES_FILE.read_text(encoding="utf-8-sig"))
+    if isinstance(raw, dict):
+        raw = raw.get("types")
+    values = _normalize_string_list(raw)
+    return values or list(DEFAULT_PACKAGING_TYPES)
+
+
+def save_types(payload: Any) -> list[str]:
+    if isinstance(payload, dict):
+        payload = payload.get("types")
+    values = _normalize_string_list(payload)
+    if not values:
+        raise ValueError("Добавьте хотя бы один тип упаковки.")
+    TYPES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TYPES_FILE.write_text(
+        json.dumps(values, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return values
 
 
 def list_published() -> list[dict[str, Any]]:
@@ -86,17 +136,25 @@ def _normalize_item(payload: dict[str, Any], *, existing_id: str = "") -> dict[s
     if not name:
         raise ValueError("Укажите название упаковки.")
 
+    packaging_type = str(payload.get("packagingType") or payload.get("type") or "").strip()
+    if not packaging_type or packaging_type == "Тип упаковки":
+        raise ValueError("Выберите тип упаковки.")
+
     item_id = str(payload.get("id") or existing_id or "").strip()
     if not item_id:
         item_id = storage.slugify(name)
     if not item_id:
         item_id = f"pkg-{uuid.uuid4().hex[:8]}"
 
+    articles = _normalize_string_list(payload.get("articles"), legacy=payload.get("article"))
+    barcodes = _normalize_string_list(payload.get("barcodes"), legacy=payload.get("barcode"))
+
     return {
         "id": item_id,
         "name": name,
-        "article": str(payload.get("article") or "").strip(),
-        "barcode": str(payload.get("barcode") or "").strip(),
+        "packagingType": packaging_type,
+        "articles": articles,
+        "barcodes": barcodes,
         "text": str(payload.get("text") or "").strip(),
         "images": _normalize_images(payload.get("images")),
     }
@@ -106,8 +164,9 @@ def _public_item(item: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": item["id"],
         "name": item.get("name", ""),
-        "article": item.get("article", ""),
-        "barcode": item.get("barcode", ""),
+        "packagingType": item.get("packagingType", ""),
+        "articles": _normalize_string_list(item.get("articles"), legacy=item.get("article")),
+        "barcodes": _normalize_string_list(item.get("barcodes"), legacy=item.get("barcode")),
         "text": item.get("text", ""),
         "images": _normalize_images(item.get("images")),
     }

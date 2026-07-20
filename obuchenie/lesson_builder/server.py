@@ -387,10 +387,35 @@ def api_packaging_upload_options(item_id: str):
     return ("", 204)
 
 
+@app.route("/api/packaging-types", methods=["OPTIONS"])
+def api_packaging_types_options():
+    return ("", 204)
+
+
 @app.get("/api/packaging/catalog")
 @auth.require_login
 def api_packaging_catalog():
     return jsonify(packaging.list_catalog())
+
+
+@app.get("/api/packaging-types")
+@auth.require_login
+def api_list_packaging_types():
+    return jsonify({"types": packaging.list_types()})
+
+
+@app.put("/api/packaging-types")
+@auth.require_login
+def api_save_packaging_types():
+    payload = request.get_json(silent=True) or {}
+    try:
+        types = packaging.save_types(payload)
+        return jsonify({"types": types, "message": "Типы упаковки сохранены."})
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
+        return jsonify({"error": str(exc)}), 500
 
 
 @app.get("/api/packaging-drafts")
