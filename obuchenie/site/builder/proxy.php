@@ -169,11 +169,14 @@ foreach (preg_split('/\r\n|\n|\r/', $rawHeaders) as $line) {
 
     if ($lower === 'set-cookie') {
         $value = preg_replace('/;\s*Domain=[^;]*/i', '', $value) ?? $value;
+        $value = preg_replace('/;\s*Secure/i', '', $value) ?? $value;
+        $value = preg_replace('/;\s*SameSite=[^;]*/i', '', $value) ?? $value;
         if (stripos($value, 'Path=') === false) {
             $value .= '; Path=' . $publicPrefix;
         } else {
-            $value = preg_replace('/Path=\/x-active-builder/i', 'Path=' . $publicPrefix, $value) ?? $value;
-            $value = preg_replace('/Path=\//i', 'Path=' . $publicPrefix, $value) ?? $value;
+            $value = preg_replace('/;\s*Path=\/x-active-builder\/?/i', '; Path=' . $publicPrefix, $value) ?? $value;
+            // Only rewrite bare Path=/ (root), not Path=/obuchenie/...
+            $value = preg_replace('/;\s*Path=\/(?=[;\s]|$)/i', '; Path=' . $publicPrefix, $value) ?? $value;
         }
         $value .= '; Secure; SameSite=Lax';
         header($name . ': ' . $value, false);

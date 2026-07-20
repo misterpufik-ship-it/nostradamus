@@ -2252,6 +2252,10 @@ loadHealth().finally(() => {
       loadProjects().then(async () => {
         const params = new URLSearchParams(window.location.search);
         const projectId = params.get("project");
+        const workspace = params.get("workspace");
+        if (workspace && ["lessons", "regulations", "packaging", "users"].includes(workspace)) {
+          setWorkspace(workspace);
+        }
         if (projectId) {
           await openProject(projectId);
         }

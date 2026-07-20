@@ -77,6 +77,7 @@ const state = {
   query: "",
   completed: {},
   mode: "library",
+  developWorkspace: "lessons",
   editMode: false,
   displayMode: "extended",
   activeSlideIndex: 0,
@@ -1138,7 +1139,7 @@ function setMode(mode) {
   if (isDevelop) {
     nodes.sourceVideo.pause();
     const material = selectedMaterial();
-    syncDevelopFrame(material?.builderProjectId);
+    syncDevelopFrame(state.developWorkspace === "lessons" ? material?.builderProjectId : "");
   } else if (isTools) {
     nodes.sourceVideo.pause();
     window.initNostradamusTools?.();
@@ -1226,14 +1227,14 @@ function updateLessonActionButtons(material) {
   nodes.openBuilder?.classList.toggle("hidden", !editable && !material.builderProjectId);
 }
 
-function builderUrl(projectId) {
+function builderUrl(projectId, workspace) {
   const base = builderUrlRoot();
-  if (!projectId) {
-    const root = base.endsWith("/") ? base.slice(0, -1) : base;
-    return `${root}/login`;
-  }
-  const join = base.includes("?") ? "&" : "?";
-  return `${base}${join}project=${encodeURIComponent(projectId)}`;
+  const root = base.endsWith("/") ? base : `${base}/`;
+  const params = new URLSearchParams();
+  if (projectId) params.set("project", projectId);
+  if (workspace && workspace !== "lessons") params.set("workspace", workspace);
+  const qs = params.toString();
+  return qs ? `${root}?${qs}` : root;
 }
 
 function builderUrlRoot() {
@@ -1247,11 +1248,18 @@ function syncDevelopFrame(projectId) {
   const link = document.querySelector("#develop-open-link");
   if (!frame) return;
 
-  const url = builderUrl(projectId || "");
+  const workspace = state.developWorkspace || "lessons";
+  const url = builderUrl(projectId || "", workspace);
   if (link) link.href = url;
-  frame.src = url;
+  if (frame.dataset.loadedUrl !== url) {
+    frame.src = url;
+    frame.dataset.loadedUrl = url;
+  }
   frame.classList.remove("hidden");
   note?.classList.add("hidden");
+  document.querySelectorAll(".develop-workspace-btn").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.developWorkspace === workspace);
+  });
 }
 
 async function saveLessonEdits() {
@@ -1285,6 +1293,15 @@ async function saveLessonEdits() {
 
 nodes.modeButtons.forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
+});
+
+document.querySelectorAll(".develop-workspace-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.developWorkspace = button.dataset.developWorkspace || "lessons";
+    const material = selectedMaterial();
+    syncDevelopFrame(state.developWorkspace === "lessons" ? material?.builderProjectId : "");
+    if (state.mode !== "develop") setMode("develop");
+  });
 });
 
 function setView(view) {
@@ -1435,6 +1452,10 @@ async function bootstrap() {
   } else if (mode === "tools") {
     setMode("tools");
   } else if (mode === "develop") {
+    const workspace = params.get("workspace");
+    if (workspace && ["lessons", "packaging", "regulations"].includes(workspace)) {
+      state.developWorkspace = workspace;
+    }
     setMode("develop");
   } else {
     setMode("library");

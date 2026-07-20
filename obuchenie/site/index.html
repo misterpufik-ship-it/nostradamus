@@ -7,7 +7,7 @@
     <link rel="icon" href="./favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
-    <link rel="stylesheet" href="./styles.css?v=20260720a" />
+    <link rel="stylesheet" href="./styles.css?v=20260720b" />
   </head>
   <body>
     <div class="app-shell">
@@ -261,21 +261,28 @@
           </div>
         </section>
 
-        <section class="develop-layout hidden" id="develop-layout" aria-label="Разработка урока">
+        <section class="develop-layout hidden" id="develop-layout" aria-label="Создание материалов">
           <div class="develop-card">
             <header class="develop-header">
-              <p class="eyebrow">Конструктор</p>
-              <h2>Разработка урока из видео</h2>
-              <a class="dev-link-btn dev-link-btn-light" id="develop-open-link" href="/obuchenie/builder/login" target="_blank" rel="noreferrer">Открыть в новой вкладке</a>
+              <div>
+                <p class="eyebrow">Создание</p>
+                <h2>Создать материал</h2>
+              </div>
+              <nav class="develop-workspace-switch" aria-label="Тип материала">
+                <button class="develop-workspace-btn is-active" type="button" data-develop-workspace="lessons">Урок</button>
+                <button class="develop-workspace-btn" type="button" data-develop-workspace="packaging">Упаковка</button>
+                <button class="develop-workspace-btn" type="button" data-develop-workspace="regulations">Регламент</button>
+              </nav>
+              <a class="dev-link-btn dev-link-btn-light" id="develop-open-link" href="/obuchenie/builder/" target="_blank" rel="noreferrer">Открыть в новой вкладке</a>
             </header>
             <iframe
               class="develop-frame"
               id="develop-frame"
-              title="Разработка урока"
+              title="Создание материала"
               loading="lazy"
             ></iframe>
             <p class="develop-note hidden" id="develop-note">
-              Не удалось загрузить конструктор. Попробуйте открыть его в новой вкладке.
+              Не удалось загрузить редактор. Попробуйте открыть его в новой вкладке.
             </p>
           </div>
         </section>
@@ -295,6 +302,6 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script type="module" src="./tools/tools.js?v=20260708a"></script>
-    <script src="./app.js?v=20260720a"></script>
+    <script src="./app.js?v=20260720b"></script>
   </body>
 </html>

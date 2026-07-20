@@ -391,10 +391,31 @@ button {
 }
 
 .develop-header h2 {
-  margin: 0;
+  margin: 2px 0 0;
   font-size: 18px;
   line-height: 1.2;
-  flex: 1 1 auto;
+}
+
+.develop-workspace-switch {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.develop-workspace-btn {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.develop-workspace-btn.is-active {
+  border-color: var(--cyan);
+  background: #eef7fb;
+  color: #1c5f6d;
 }
 
 .dev-link-btn-light {
