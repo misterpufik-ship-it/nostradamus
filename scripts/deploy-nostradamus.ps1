@@ -24,17 +24,26 @@ if (!(Test-Path $Source)) {
 
 Write-Host "Uploading nostradamus site to VPS..."
 ssh -i $IdentityFile -o BatchMode=yes -o ConnectTimeout=20 $Remote "rm -rf $RemoteDir && mkdir -p $RemoteDir && chown -R deploy:deploy $RemoteDir"
-scp -i $IdentityFile -o BatchMode=yes -r $Source "${Remote}:$RemoteDir/"
+# Copy CONTENTS of public_html into RemoteDir (not a nested public_html folder)
+scp -i $IdentityFile -o BatchMode=yes -r "${Source}\*" "${Remote}:$RemoteDir/"
 
-$excludeHomepage = ""
+$excludeArgs = @(
+    "--exclude", "obuchenie",
+    "--exclude", "list",
+    "--exclude", "admin/uploads",
+    "--exclude", "admin/config/auth.php"
+)
 if (!$IncludeHomepageData) {
-    $excludeHomepage = "--exclude admin/data/homepage.json"
+    $excludeArgs += @("--exclude", "admin/data/homepage.json")
     Write-Host "Skipping admin/data/homepage.json (live CMS data stays on server)."
 }
+Write-Host "Never deleting sibling dirs (obuchenie/, list/) — deploy without --delete."
 
+# Build remote rsync command WITHOUT --delete to avoid wiping /obuchenie and /list
+$excludeRemote = ($excludeArgs | ForEach-Object { $_ }) -join " "
 $remoteCmd = @(
     "chown -R deploy:deploy $RemoteDir",
-    "sudo -u deploy rsync -az --delete $excludeHomepage $RemoteDir/ mrpuffch@mrpuffch.beget.tech:$BegetPath/"
+    "sudo -u deploy rsync -az $excludeRemote $RemoteDir/ mrpuffch@mrpuffch.beget.tech:$BegetPath/"
 ) -join "; "
 
 ssh -i $IdentityFile -o BatchMode=yes -o ConnectTimeout=120 $Remote $remoteCmd
