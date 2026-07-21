@@ -196,7 +196,14 @@ function lessonRegulations(material) {
 }
 
 function regulationText(item) {
-  return normalize([item.title, item.text, item.url].join(" "));
+  const parts = [item?.title, item?.text, item?.url];
+  if (Array.isArray(item?.items)) {
+    item.items.forEach((point) => {
+      parts.push(point?.title, point?.description);
+      (point?.images || []).forEach((img) => parts.push(img?.caption));
+    });
+  }
+  return normalize(parts.filter(Boolean).join(" "));
 }
 
 function scoreRegulation(item, query) {
@@ -818,12 +825,72 @@ function renderRegulationPage() {
   }
 
   nodes.regulationPageTitle.textContent = item.title;
-  nodes.regulationPageLead.textContent = item.url ? "Документ и текст регламента." : "Текст регламента.";
+  const points = Array.isArray(item.items) ? item.items.filter((entry) => entry) : [];
+  nodes.regulationPageLead.textContent = points.length
+    ? `${points.length} ${points.length === 1 ? "пункт" : points.length < 5 ? "пункта" : "пунктов"}`
+    : item.url
+      ? "Документ и текст регламента."
+      : "Текст регламента.";
+
   const link = item.url
     ? `<a class="file-link" href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">Открыть документ</a>`
     : "";
   const text = item.text ? `<div class="regulation-page-text">${renderRichText(item.text)}</div>` : "";
-  nodes.regulationPageBody.innerHTML = `${link}${text}`;
+  const itemsHtml = points.length
+    ? `<div class="regulation-items">${points
+        .map((point, index) => {
+          const number = point.number || index + 1;
+          const title = point.title
+            ? `<h3 class="regulation-item-title"><span class="regulation-item-num">${number}</span>${escapeHtml(point.title)}</h3>`
+            : `<h3 class="regulation-item-title"><span class="regulation-item-num">${number}</span>Пункт ${number}</h3>`;
+          const description = point.description
+            ? `<div class="regulation-item-description">${renderRichText(point.description)}</div>`
+            : "";
+          const images = Array.isArray(point.images) ? point.images.filter((entry) => entry?.image) : [];
+          const gallery = images.length
+            ? `<div class="regulation-item-gallery">${images
+                .map((entry, imageIndex) => {
+                  const markers =
+                    entry.annotations?.length && entry.width && entry.height
+                      ? `<div class="screenshot-overlay">${renderScreenshotMarkers(entry.annotations, entry.width, entry.height)}</div>`
+                      : entry.annotations?.length
+                        ? `<div class="screenshot-overlay" data-pending-annotations="1"></div>`
+                        : "";
+                  return `<figure class="regulation-item-shot" data-reg-shot="${index}-${imageIndex}">
+                    <div class="screenshot-frame">
+                      <img src="${escapeHtml(entry.image)}" alt="${escapeHtml(entry.caption || point.title || item.title)}" />
+                      ${markers}
+                    </div>
+                    ${entry.caption ? `<figcaption>${escapeHtml(entry.caption)}</figcaption>` : ""}
+                  </figure>`;
+                })
+                .join("")}</div>`
+            : "";
+          return `<article class="regulation-item-block">${title}${description}${gallery}</article>`;
+        })
+        .join("")}</div>`
+    : "";
+
+  nodes.regulationPageBody.innerHTML = `${link}${text}${itemsHtml}`;
+  nodes.regulationPageBody.querySelectorAll("[data-pending-annotations]").forEach((overlay) => {
+    const frame = overlay.closest(".screenshot-frame");
+    const img = frame?.querySelector("img");
+    if (!img) return;
+    const figure = overlay.closest("[data-reg-shot]");
+    const key = figure?.dataset.regShot || "";
+    const [pointIndex, imageIndex] = key.split("-").map(Number);
+    const point = points[pointIndex];
+    const shot = point?.images?.[imageIndex];
+    if (!shot?.annotations?.length) return;
+    const apply = () => {
+      shot.width = img.naturalWidth;
+      shot.height = img.naturalHeight;
+      overlay.innerHTML = renderScreenshotMarkers(shot.annotations, shot.width, shot.height);
+      overlay.removeAttribute("data-pending-annotations");
+    };
+    if (img.complete && img.naturalWidth) apply();
+    else img.addEventListener("load", apply, { once: true });
+  });
 }
 
 function renderPackagingList(items) {
@@ -1031,19 +1098,36 @@ function renderLesson() {
     nodes.lessonRegulationGrid.innerHTML = `<div class="empty-state light-empty">К этому уроку регламенты не привязаны.</div>`;
     nodes.lessonRegulationDetail.innerHTML = "";
   } else {
+    const current = linkedRegulations[state.currentRegulation] || linkedRegulations[0];
     nodes.lessonRegulationGrid.innerHTML = linkedRegulations
-      .map((item, index) => {
+      .map((entry, index) => {
         const active = index === state.currentRegulation ? " is-active" : "";
+        const tip =
+          truncatePlain(entry.text, 96) ||
+          truncatePlain((entry.items || []).map((point) => point.description || point.title).join(" "), 96) ||
+          entry.id;
         return `<button class="regulation-item${active}" type="button" data-regulation-index="${index}">
-          <strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(truncatePlain(item.text, 96))}</span>
+          <strong>${escapeHtml(entry.title)}</strong><span>${escapeHtml(tip)}</span>
         </button>`;
       })
       .join("");
-    const current = linkedRegulations[state.currentRegulation] || linkedRegulations[0];
     const link = current.url
       ? `<a class="file-link" href="${escapeHtml(current.url)}" target="_blank" rel="noreferrer">Открыть документ</a>`
       : "";
-    nodes.lessonRegulationDetail.innerHTML = `${link}<div class="regulation-page-text">${renderRichText(current.text || "")}</div>`;
+    const points = Array.isArray(current.items) ? current.items : [];
+    const itemsHtml = points.length
+      ? `<div class="regulation-items">${points
+          .map((point, index) => {
+            const number = point.number || index + 1;
+            const heading = point.title || `Пункт ${number}`;
+            return `<div class="regulation-item-block compact">
+              <h3 class="regulation-item-title"><span class="regulation-item-num">${number}</span>${escapeHtml(heading)}</h3>
+              ${point.description ? `<div class="regulation-item-description">${renderRichText(point.description)}</div>` : ""}
+            </div>`;
+          })
+          .join("")}</div>`
+      : `<div class="regulation-page-text">${renderRichText(current.text || "")}</div>`;
+    nodes.lessonRegulationDetail.innerHTML = `${link}${itemsHtml}`;
     nodes.lessonRegulationGrid.querySelectorAll(".regulation-item").forEach((button) => {
       button.addEventListener("click", () => {
         state.currentRegulation = Number(button.dataset.regulationIndex);

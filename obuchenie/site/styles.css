@@ -1625,6 +1625,84 @@ button {
   margin-bottom: 12px;
 }
 
+.regulation-items {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.regulation-item-block {
+  padding: 16px;
+  border: 1px solid #c9e2ea;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.regulation-item-block.compact {
+  padding: 12px;
+}
+
+.regulation-item-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-size: 18px;
+  color: #17313a;
+}
+
+.regulation-item-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #e53935;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.regulation-item-description {
+  color: #244854;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.regulation-item-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.regulation-item-shot {
+  margin: 0;
+}
+
+.regulation-item-shot .screenshot-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #d5e6ec;
+  background: #f4fbfd;
+}
+
+.regulation-item-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.regulation-item-shot figcaption {
+  margin-top: 6px;
+  color: #5a6b74;
+  font-size: 13px;
+}
+
 .regulations-layout .regulation-card {
   min-height: calc(100vh - 88px);
 }

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Разработка урока — X-active</title>
-    <link rel="stylesheet" href="static/builder.css?v=20260720c" />
+    <link rel="stylesheet" href="static/builder.css?v=20260721a" />
   </head>
   <body>
     <div class="app" id="app-shell">
@@ -229,7 +229,59 @@
                 <label>Идентификатор<input id="regulation-id" type="text" placeholder="upakovka-fbs" /></label>
                 <label class="span-2">Название<input id="regulation-title" type="text" placeholder="Регламент упаковки FBS" /></label>
                 <label class="span-3">Ссылка на документ<input id="regulation-url" type="url" placeholder="https://… или ./docs/file.pdf" /></label>
-                <label class="span-3">Текст регламента<textarea id="regulation-text" rows="14" placeholder="Полный текст или краткое содержание"></textarea></label>
+                <label class="span-3">Общий текст (необязательно)<textarea id="regulation-text" rows="4" placeholder="Вводный текст или краткое содержание"></textarea></label>
+
+                <div class="span-3 regulation-items-block">
+                  <div class="panel-head packaging-photos-head">
+                    <h2>Пункты</h2>
+                    <button class="secondary-btn" id="regulation-add-item" type="button">+ Пункт</button>
+                  </div>
+                  <p class="hint-inline">Добавляйте пункты 1, 2, 3… У каждого — своё описание и несколько фото с разметкой.</p>
+                  <div class="regulation-items-list" id="regulation-items-list"></div>
+                </div>
+
+                <div class="span-3 regulation-item-editor hidden" id="regulation-item-editor">
+                  <div class="panel-head packaging-photos-head">
+                    <h2 id="regulation-item-heading">Пункт 1</h2>
+                    <button class="danger-btn" id="regulation-delete-item" type="button">Удалить пункт</button>
+                  </div>
+                  <label>Заголовок пункта<input id="regulation-item-title" type="text" placeholder="Краткий заголовок (необязательно)" /></label>
+                  <label>Описание<textarea id="regulation-item-description" rows="6" placeholder="Текст пункта"></textarea></label>
+
+                  <div class="packaging-photos regulation-item-photos">
+                    <div class="panel-head packaging-photos-head">
+                      <h2>Фотографии пункта</h2>
+                      <button class="secondary-btn" id="regulation-add-photo" type="button">+ Фото</button>
+                    </div>
+                    <input id="regulation-photo-input" type="file" accept="image/*" multiple hidden />
+                    <div class="packaging-photo-grid" id="regulation-photo-grid"></div>
+                    <p class="hint-inline">Сначала сохраните черновик, затем загружайте фото. Нажмите «Разметить», чтобы открыть редактор.</p>
+                  </div>
+
+                  <div class="regulation-annotation-dock hidden" id="regulation-annotation-dock">
+                    <div class="panel-head annotation-head">
+                      <h2 id="regulation-annotation-title">Разметка фото</h2>
+                      <div class="toolbar" id="regulation-annotation-toolbar">
+                        <button class="tool-btn is-active" data-reg-tool="select" type="button">Выбор</button>
+                        <button class="tool-btn" data-reg-tool="arrow" type="button">Стрелка</button>
+                        <button class="tool-btn" data-reg-tool="rect" type="button">Рамка</button>
+                        <button class="tool-btn" data-reg-tool="circle" type="button">Круг</button>
+                        <button class="tool-btn" data-reg-tool="text" type="button">Текст</button>
+                        <button class="tool-btn" data-reg-tool="callout" type="button">Сноска</button>
+                        <button class="ghost-btn" id="regulation-delete-annotation" type="button">Удалить</button>
+                        <button class="ghost-btn" id="regulation-clear-annotations" type="button">Очистить</button>
+                        <button class="secondary-btn" id="regulation-close-annotation" type="button">Готово</button>
+                      </div>
+                    </div>
+                    <div class="color-row">
+                      <span class="color-label">Цвет:</span>
+                      <div class="color-toolbar" id="regulation-color-toolbar"></div>
+                    </div>
+                    <div class="canvas-wrap" id="regulation-canvas-wrap">
+                      <canvas id="regulation-annotation-canvas"></canvas>
+                    </div>
+                  </div>
+                </div>
               </div>
               <p class="status-text" id="regulation-status">Выберите регламент или создайте новый.</p>
             </section>
@@ -375,6 +427,6 @@
     </div>
 
     <script src="static/canvas-editor.js?v=20260720c"></script>
-    <script src="static/builder.js?v=20260720c"></script>
+    <script src="static/builder.js?v=20260721a"></script>
   </body>
 </html>

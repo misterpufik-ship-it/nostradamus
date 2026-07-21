@@ -226,6 +226,11 @@ def api_regulation_publish_options(regulation_id: str):
     return ("", 204)
 
 
+@app.route("/api/regulation-drafts/<regulation_id>/upload-image", methods=["OPTIONS"])
+def api_regulation_upload_options(regulation_id: str):
+    return ("", 204)
+
+
 @app.get("/api/regulations/catalog")
 @auth.require_login
 def api_regulations_catalog():
@@ -285,7 +290,7 @@ def api_publish_regulation_draft(regulation_id: str):
     user = auth.current_user()
     try:
         item = regulations.publish_draft(regulation_id, user)
-        deploy_result = auto_deploy(regulation_id, ["published-regulations.json"])
+        deploy_result = auto_deploy(regulation_id, regulations.deploy_files_for(item))
         return jsonify(
             {
                 **item,
@@ -307,7 +312,7 @@ def api_update_regulation(regulation_id: str):
     user = auth.current_user()
     try:
         item = regulations.update_published(regulation_id, payload, user)
-        deploy_result = auto_deploy(regulation_id, ["published-regulations.json"])
+        deploy_result = auto_deploy(regulation_id, regulations.deploy_files_for(item))
         return jsonify(
             {
                 **item,
@@ -332,6 +337,57 @@ def api_delete_regulation_draft(regulation_id: str):
         return jsonify({**item, "message": "Черновик регламента удалён."})
     except FileNotFoundError:
         return jsonify({"error": "Черновик регламента не найден"}), 404
+    except Exception as exc:  # noqa: BLE001
+        traceback.print_exc()
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.post("/api/regulation-drafts/<regulation_id>/upload-image")
+@auth.require_login
+def api_upload_regulation_image(regulation_id: str):
+    user = auth.current_user()
+    try:
+        regulations.guard_draft_write(user, regulation_id)
+    except PermissionError as exc:
+        return jsonify({"error": str(exc)}), 403
+
+    file = request.files.get("file")
+    if not file or not file.filename:
+        return jsonify({"error": "Файл изображения не передан."}), 400
+
+    item_id = str(request.args.get("itemId") or request.form.get("itemId") or "").strip()
+    try:
+        saved = regulations.save_image(regulation_id, file.read(), file.filename)
+        drafts = regulations.list_drafts()
+        draft = next((entry for entry in drafts if entry.get("id") == regulation_id), None)
+        if draft is None:
+            raise FileNotFoundError(f"Черновик регламента не найден: {regulation_id}")
+
+        items = list(draft.get("items") or [])
+        if not items:
+            items = [
+                {
+                    "id": f"item-{uuid.uuid4().hex[:8]}",
+                    "number": 1,
+                    "title": "",
+                    "description": "",
+                    "images": [],
+                }
+            ]
+        target_index = next((i for i, entry in enumerate(items) if str(entry.get("id")) == item_id), 0)
+        if target_index < 0 or target_index >= len(items):
+            target_index = 0
+        point = dict(items[target_index])
+        images = list(point.get("images") or [])
+        images.append(saved)
+        point["images"] = images
+        items[target_index] = point
+        updated = regulations.update_draft(regulation_id, {**draft, "items": items}, user)
+        return jsonify({**saved, "item": updated, "itemId": point.get("id"), "message": "Фото добавлено."})
+    except FileNotFoundError:
+        return jsonify({"error": "Сначала сохраните черновик регламента."}), 404
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:  # noqa: BLE001
         traceback.print_exc()
         return jsonify({"error": str(exc)}), 500

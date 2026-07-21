@@ -1180,8 +1180,85 @@ dialog menu {
 }
 
 .regulation-editor-grid textarea {
-  min-height: 280px;
+  min-height: 96px;
   resize: vertical;
+}
+
+.regulation-items-block,
+.regulation-item-editor,
+.regulation-item-photos {
+  display: grid;
+  gap: 12px;
+}
+
+.regulation-items-list {
+  display: grid;
+  gap: 8px;
+}
+
+.regulation-item-btn {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d5dde5;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.regulation-item-btn.is-active,
+.regulation-item-btn:hover {
+  border-color: #1e88e5;
+  background: #f3f9ff;
+}
+
+.regulation-item-btn strong {
+  font-size: 16px;
+}
+
+.regulation-item-btn span {
+  color: #44515c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.regulation-item-btn small {
+  color: #7a8792;
+}
+
+.regulation-photo-card {
+  position: relative;
+}
+
+.regulation-photo-card.is-editing {
+  outline: 2px solid #1e88e5;
+}
+
+.regulation-photo-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.regulation-annotation-dock {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #d5dde5;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+#regulation-annotation-canvas {
+  max-width: 100%;
+  height: auto;
+  background: #eef2f6;
 }
 
 .packaging-rich-field {

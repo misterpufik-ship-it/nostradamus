@@ -40,6 +40,9 @@ const state = {
   workspace: "lessons",
   regulations: [],
   selectedRegulationId: null,
+  regulationItems: [],
+  selectedRegulationItemId: null,
+  selectedRegulationImageIndex: -1,
   packaging: [],
   selectedPackagingId: null,
   packagingImages: [],
@@ -115,6 +118,24 @@ const nodes = {
   regulationUrl: document.querySelector("#regulation-url"),
   regulationText: document.querySelector("#regulation-text"),
   regulationStatus: document.querySelector("#regulation-status"),
+  regulationItemsList: document.querySelector("#regulation-items-list"),
+  regulationItemEditor: document.querySelector("#regulation-item-editor"),
+  regulationItemHeading: document.querySelector("#regulation-item-heading"),
+  regulationItemTitle: document.querySelector("#regulation-item-title"),
+  regulationItemDescription: document.querySelector("#regulation-item-description"),
+  regulationPhotoGrid: document.querySelector("#regulation-photo-grid"),
+  regulationPhotoInput: document.querySelector("#regulation-photo-input"),
+  regulationAddItem: document.querySelector("#regulation-add-item"),
+  regulationDeleteItem: document.querySelector("#regulation-delete-item"),
+  regulationAddPhoto: document.querySelector("#regulation-add-photo"),
+  regulationAnnotationDock: document.querySelector("#regulation-annotation-dock"),
+  regulationAnnotationTitle: document.querySelector("#regulation-annotation-title"),
+  regulationAnnotationToolbar: document.querySelector("#regulation-annotation-toolbar"),
+  regulationCanvas: document.querySelector("#regulation-annotation-canvas"),
+  regulationColorToolbar: document.querySelector("#regulation-color-toolbar"),
+  regulationDeleteAnnotation: document.querySelector("#regulation-delete-annotation"),
+  regulationClearAnnotations: document.querySelector("#regulation-clear-annotations"),
+  regulationCloseAnnotation: document.querySelector("#regulation-close-annotation"),
   newRegulation: document.querySelector("#new-regulation"),
   saveRegulation: document.querySelector("#save-regulation"),
   deleteRegulation: document.querySelector("#delete-regulation"),
@@ -162,6 +183,8 @@ const nodes = {
 let bgImage = null;
 let saveTimer = null;
 let canvasEditor = null;
+let regulationCanvasEditor = null;
+let regulationBgImage = null;
 let pulseAnim = null;
 let actionFieldEditing = false;
 let annotationDockParent = null;
@@ -922,11 +945,326 @@ function selectedRegulation() {
   return state.regulations.find((item) => item.id === state.selectedRegulationId) || null;
 }
 
+function regulationItemId() {
+  return `item-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function normalizeRegulationItems(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map((entry, index) => ({
+    id: entry?.id || regulationItemId(),
+    number: Number(entry?.number) > 0 ? Number(entry.number) : index + 1,
+    title: entry?.title || "",
+    description: entry?.description || "",
+    images: Array.isArray(entry?.images)
+      ? entry.images
+          .filter((img) => img?.image)
+          .map((img) => ({
+            image: img.image,
+            caption: img.caption || "",
+            annotations: Array.isArray(img.annotations) ? img.annotations.map((ann) => ({ ...ann })) : [],
+            width: img.width || 0,
+            height: img.height || 0,
+          }))
+      : [],
+  }));
+}
+
+function renumberRegulationItems() {
+  state.regulationItems.forEach((item, index) => {
+    item.number = index + 1;
+  });
+}
+
+function selectedRegulationItem() {
+  return state.regulationItems.find((item) => item.id === state.selectedRegulationItemId) || null;
+}
+
+function syncRegulationItemFieldsFromDom() {
+  const item = selectedRegulationItem();
+  if (!item) return;
+  item.title = nodes.regulationItemTitle?.value.trim() || "";
+  item.description = nodes.regulationItemDescription?.value.trim() || "";
+  if (regulationCanvasEditor && state.selectedRegulationImageIndex >= 0) {
+    const image = item.images[state.selectedRegulationImageIndex];
+    if (image) {
+      image.annotations = regulationCanvasEditor.getAnnotations();
+      if (regulationBgImage) {
+        image.width = regulationBgImage.width;
+        image.height = regulationBgImage.height;
+      }
+    }
+  }
+}
+
+function regulationAssetUrl(path) {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  const clean = String(path).replace(/^\.\//, "");
+  return siteHomeUrl().replace(/\/?$/, "/") + clean;
+}
+
+function initRegulationCanvasEditor() {
+  if (regulationCanvasEditor || !nodes.regulationCanvas) return regulationCanvasEditor;
+  regulationCanvasEditor = createCanvasEditor(
+    nodes.regulationCanvas,
+    null,
+    (annotations) => {
+      const item = selectedRegulationItem();
+      if (!item || state.selectedRegulationImageIndex < 0) return;
+      const image = item.images[state.selectedRegulationImageIndex];
+      if (!image) return;
+      image.annotations = annotations;
+    },
+    {
+      getNextLabel: () => {
+        const item = selectedRegulationItem();
+        const all = [];
+        (item?.images || []).forEach((img) => {
+          (img.annotations || []).forEach((ann) => all.push(ann));
+        });
+        return window.nextAnnotationLabel(all);
+      },
+    }
+  );
+  regulationCanvasEditor.setColor(state.activeColor);
+  if (nodes.regulationColorToolbar) {
+    const colors = ["#e53935", "#1e88e5", "#43a047", "#fb8c00", "#8e24aa", "#000000", "#ffffff"];
+    nodes.regulationColorToolbar.innerHTML = colors
+      .map(
+        (color) =>
+          `<button class="color-swatch${color === state.activeColor ? " is-active" : ""}" type="button" data-reg-color="${color}" style="--swatch:${color}" title="${color}"></button>`
+      )
+      .join("");
+    nodes.regulationColorToolbar.querySelectorAll("[data-reg-color]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.activeColor = button.dataset.regColor;
+        regulationCanvasEditor.setColor(state.activeColor);
+        nodes.regulationColorToolbar.querySelectorAll(".color-swatch").forEach((node) => {
+          node.classList.toggle("is-active", node.dataset.regColor === state.activeColor);
+        });
+      });
+    });
+  }
+  return regulationCanvasEditor;
+}
+
+function activateRegulationTool(tool) {
+  nodes.regulationAnnotationToolbar?.querySelectorAll(".tool-btn").forEach((item) => {
+    item.classList.toggle("is-active", item.dataset.regTool === tool);
+  });
+  initRegulationCanvasEditor()?.setTool(tool);
+}
+
+async function openRegulationImageEditor(imageIndex) {
+  const item = selectedRegulationItem();
+  if (!item?.images?.[imageIndex]) return;
+  syncRegulationItemFieldsFromDom();
+  state.selectedRegulationImageIndex = imageIndex;
+  const imageEntry = item.images[imageIndex];
+  nodes.regulationAnnotationDock?.classList.remove("hidden");
+  if (nodes.regulationAnnotationTitle) {
+    nodes.regulationAnnotationTitle.textContent = `Разметка · пункт ${item.number} · фото ${imageIndex + 1}`;
+  }
+  const editor = initRegulationCanvasEditor();
+  await new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      regulationBgImage = image;
+      nodes.regulationCanvas.width = image.width;
+      nodes.regulationCanvas.height = image.height;
+      window.__canvasBgImage = image;
+      resolve();
+    };
+    image.onerror = reject;
+    image.src = regulationAssetUrl(imageEntry.image);
+  });
+  editor.setAnnotations(imageEntry.annotations || []);
+  editor.redraw(regulationBgImage);
+  activateRegulationTool("select");
+}
+
+function closeRegulationImageEditor() {
+  syncRegulationItemFieldsFromDom();
+  nodes.regulationAnnotationDock?.classList.add("hidden");
+  state.selectedRegulationImageIndex = -1;
+  renderRegulationPhotos();
+}
+
+function renderRegulationItemsList() {
+  if (!nodes.regulationItemsList) return;
+  renumberRegulationItems();
+  if (!state.regulationItems.length) {
+    nodes.regulationItemsList.innerHTML = `<p class="status-text">Пунктов пока нет. Нажмите «+ Пункт».</p>`;
+    nodes.regulationItemEditor?.classList.add("hidden");
+    return;
+  }
+  if (!state.selectedRegulationItemId || !selectedRegulationItem()) {
+    state.selectedRegulationItemId = state.regulationItems[0].id;
+  }
+  nodes.regulationItemsList.innerHTML = state.regulationItems
+    .map((item) => {
+      const active = item.id === state.selectedRegulationItemId ? " is-active" : "";
+      const preview = (item.description || item.title || "Без описания").slice(0, 80);
+      return `<button class="regulation-item-btn${active}" type="button" data-regulation-item="${escapeHtml(item.id)}">
+        <strong>${item.number}.</strong>
+        <span>${escapeHtml(preview)}</span>
+        <small>${(item.images || []).length} фото</small>
+      </button>`;
+    })
+    .join("");
+  nodes.regulationItemsList.querySelectorAll("[data-regulation-item]").forEach((button) => {
+    button.addEventListener("click", () => {
+      syncRegulationItemFieldsFromDom();
+      state.selectedRegulationItemId = button.dataset.regulationItem;
+      closeRegulationImageEditor();
+      renderRegulationItemsList();
+      fillRegulationItemEditor();
+    });
+  });
+  fillRegulationItemEditor();
+}
+
+function fillRegulationItemEditor() {
+  const item = selectedRegulationItem();
+  if (!item || !nodes.regulationItemEditor) {
+    nodes.regulationItemEditor?.classList.add("hidden");
+    return;
+  }
+  nodes.regulationItemEditor.classList.remove("hidden");
+  if (nodes.regulationItemHeading) nodes.regulationItemHeading.textContent = `Пункт ${item.number}`;
+  if (nodes.regulationItemTitle) nodes.regulationItemTitle.value = item.title || "";
+  if (nodes.regulationItemDescription) nodes.regulationItemDescription.value = item.description || "";
+  renderRegulationPhotos();
+}
+
+function renderRegulationPhotos() {
+  if (!nodes.regulationPhotoGrid) return;
+  const item = selectedRegulationItem();
+  const images = item?.images || [];
+  if (!images.length) {
+    nodes.regulationPhotoGrid.innerHTML = `<p class="status-text">Фото пока нет.</p>`;
+    return;
+  }
+  nodes.regulationPhotoGrid.innerHTML = images
+    .map(
+      (entry, index) => `<div class="packaging-photo-card regulation-photo-card${state.selectedRegulationImageIndex === index ? " is-editing" : ""}" data-index="${index}">
+        <img src="${escapeHtml(regulationAssetUrl(entry.image))}" alt="" />
+        <div class="regulation-photo-actions">
+          <button class="secondary-btn" type="button" data-edit-photo="${index}">Разметить</button>
+          <button class="ghost-btn" type="button" data-remove-photo="${index}" title="Удалить">✕</button>
+        </div>
+        <input type="text" value="${escapeHtml(entry.caption || "")}" placeholder="Подпись" data-caption="${index}" />
+        <small>${(entry.annotations || []).length ? `${entry.annotations.length} меток` : "без меток"}</small>
+      </div>`
+    )
+    .join("");
+
+  nodes.regulationPhotoGrid.querySelectorAll("[data-remove-photo]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.removePhoto);
+      const current = selectedRegulationItem();
+      if (!current) return;
+      if (state.selectedRegulationImageIndex === index) closeRegulationImageEditor();
+      current.images.splice(index, 1);
+      if (state.selectedRegulationImageIndex > index) state.selectedRegulationImageIndex -= 1;
+      renderRegulationPhotos();
+      renderRegulationItemsList();
+    });
+  });
+  nodes.regulationPhotoGrid.querySelectorAll("[data-caption]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const index = Number(input.dataset.caption);
+      const current = selectedRegulationItem();
+      if (!current?.images[index]) return;
+      current.images[index].caption = input.value.trim();
+    });
+  });
+  nodes.regulationPhotoGrid.querySelectorAll("[data-edit-photo]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await openRegulationImageEditor(Number(button.dataset.editPhoto));
+        renderRegulationPhotos();
+      } catch (error) {
+        alert(error.message || "Не удалось открыть фото для разметки.");
+      }
+    });
+  });
+}
+
+function addRegulationItem() {
+  syncRegulationItemFieldsFromDom();
+  const item = {
+    id: regulationItemId(),
+    number: state.regulationItems.length + 1,
+    title: "",
+    description: "",
+    images: [],
+  };
+  state.regulationItems.push(item);
+  state.selectedRegulationItemId = item.id;
+  closeRegulationImageEditor();
+  renderRegulationItemsList();
+  nodes.regulationItemDescription?.focus();
+}
+
+function deleteSelectedRegulationItem() {
+  const item = selectedRegulationItem();
+  if (!item) return;
+  if (!confirm(`Удалить пункт ${item.number}?`)) return;
+  syncRegulationItemFieldsFromDom();
+  closeRegulationImageEditor();
+  state.regulationItems = state.regulationItems.filter((entry) => entry.id !== item.id);
+  state.selectedRegulationItemId = state.regulationItems[0]?.id || null;
+  renderRegulationItemsList();
+}
+
+async function uploadRegulationPhotos(files) {
+  const regulation = selectedRegulation();
+  const item = selectedRegulationItem();
+  if (!regulation?.id) {
+    throw new Error("Сначала сохраните черновик регламента.");
+  }
+  if (!item) {
+    throw new Error("Сначала создайте пункт.");
+  }
+  await saveRegulationItem();
+  for (const file of [...files]) {
+    const body = new FormData();
+    body.append("file", file);
+    const result = await api(
+      `/api/regulation-drafts/${encodeURIComponent(regulation.id)}/upload-image?itemId=${encodeURIComponent(item.id)}`,
+      { method: "POST", body }
+    );
+    const point = (result.item?.items || []).find((entry) => entry.id === item.id);
+    if (point) {
+      const local = state.regulationItems.find((entry) => entry.id === item.id);
+      if (local) local.images = normalizeRegulationItems([point])[0].images;
+    } else if (result.image) {
+      item.images.push({
+        image: result.image,
+        caption: result.caption || "",
+        annotations: [],
+      });
+    }
+  }
+  await loadRegulations();
+  state.selectedRegulationItemId = item.id;
+  renderRegulationItemsList();
+  nodes.regulationStatus.textContent = "Фото добавлено.";
+}
+
 function fillRegulationForm(item) {
+  syncRegulationItemFieldsFromDom();
   nodes.regulationId.value = item?.id || "";
   nodes.regulationTitle.value = item?.title || "";
   nodes.regulationUrl.value = item?.url || "";
   nodes.regulationText.value = item?.text || "";
+  state.regulationItems = normalizeRegulationItems(item?.items);
+  state.selectedRegulationItemId = state.regulationItems[0]?.id || null;
+  state.selectedRegulationImageIndex = -1;
+  nodes.regulationAnnotationDock?.classList.add("hidden");
+  renderRegulationItemsList();
   const status = item?.status === "published" ? "Опубликован" : item?.id ? "Черновик" : "";
   nodes.regulationStatus.textContent = item
     ? `${status ? `${status}: ` : ""}${item.title}`
@@ -960,15 +1298,17 @@ function renderRegulationsWorkspace() {
     .map((item) => {
       const active = item.id === state.selectedRegulationId ? " is-active" : "";
       const status = item.status === "published" ? "опубликован" : "черновик";
+      const count = Array.isArray(item.items) ? item.items.length : 0;
       return `<button class="regulation-card-btn${active}" type="button" data-regulation="${escapeHtml(item.id)}">
         <strong>${escapeHtml(item.title)}</strong>
-        <span>${escapeHtml(item.id)} · ${status}</span>
+        <span>${escapeHtml(item.id)} · ${status}${count ? ` · ${count} п.` : ""}</span>
       </button>`;
     })
     .join("");
 
   nodes.regulationsList.querySelectorAll(".regulation-card-btn").forEach((button) => {
     button.addEventListener("click", () => {
+      syncRegulationItemFieldsFromDom();
       state.selectedRegulationId = button.dataset.regulation;
       renderRegulationsWorkspace();
     });
@@ -984,11 +1324,26 @@ async function loadRegulations() {
 }
 
 function collectRegulationPayload() {
+  syncRegulationItemFieldsFromDom();
+  renumberRegulationItems();
   return {
     id: nodes.regulationId.value.trim(),
     title: nodes.regulationTitle.value.trim(),
     url: nodes.regulationUrl.value.trim(),
     text: nodes.regulationText.value.trim(),
+    items: state.regulationItems.map((item, index) => ({
+      id: item.id,
+      number: index + 1,
+      title: item.title || "",
+      description: item.description || "",
+      images: (item.images || []).map((img) => ({
+        image: img.image,
+        caption: img.caption || "",
+        annotations: img.annotations || [],
+        width: img.width || 0,
+        height: img.height || 0,
+      })),
+    })),
   };
 }
 
@@ -1000,6 +1355,7 @@ async function saveRegulationItem() {
   const payload = collectRegulationPayload();
   const existingId = state.selectedRegulationId;
   const current = selectedRegulation();
+  const keepItemId = state.selectedRegulationItemId;
   const isNew = !existingId || !current;
   const saved = isNew
     ? await api("/api/regulation-drafts", { method: "POST", body: JSON.stringify(payload) })
@@ -1009,12 +1365,17 @@ async function saveRegulationItem() {
       });
   state.selectedRegulationId = saved.id;
   await loadRegulations();
+  if (keepItemId) {
+    state.selectedRegulationItemId = keepItemId;
+    renderRegulationItemsList();
+  }
   nodes.regulationStatus.textContent = saved.message || `Черновик сохранён: ${saved.title}`;
 }
 
 async function publishRegulationItem() {
   const item = selectedRegulation();
   if (!item?.id) return;
+  await saveRegulationItem();
   const result = await api(`/api/regulation-drafts/${encodeURIComponent(item.id)}/publish`, { method: "POST" });
   await loadRegulations();
   nodes.regulationStatus.textContent = result.message || `Опубликовано: ${item.title}`;
@@ -2385,6 +2746,9 @@ document.querySelectorAll(".workspace-btn").forEach((button) => {
 
 nodes.newRegulation?.addEventListener("click", () => {
   state.selectedRegulationId = null;
+  state.regulationItems = [];
+  state.selectedRegulationItemId = null;
+  state.selectedRegulationImageIndex = -1;
   fillRegulationForm(null);
   nodes.regulationTitle.focus();
 });
@@ -2420,6 +2784,36 @@ nodes.deleteRegulation?.addEventListener("click", async () => {
     alert(error.message);
   }
 });
+
+nodes.regulationAddItem?.addEventListener("click", () => addRegulationItem());
+nodes.regulationDeleteItem?.addEventListener("click", () => deleteSelectedRegulationItem());
+nodes.regulationItemTitle?.addEventListener("change", () => syncRegulationItemFieldsFromDom());
+nodes.regulationItemDescription?.addEventListener("change", () => syncRegulationItemFieldsFromDom());
+nodes.regulationAddPhoto?.addEventListener("click", () => nodes.regulationPhotoInput?.click());
+nodes.regulationPhotoInput?.addEventListener("change", async () => {
+  const files = nodes.regulationPhotoInput.files;
+  if (!files?.length) return;
+  try {
+    await uploadRegulationPhotos(files);
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    nodes.regulationPhotoInput.value = "";
+  }
+});
+nodes.regulationAnnotationToolbar?.querySelectorAll("[data-reg-tool]").forEach((button) => {
+  button.addEventListener("click", () => activateRegulationTool(button.dataset.regTool));
+});
+nodes.regulationDeleteAnnotation?.addEventListener("click", () => {
+  initRegulationCanvasEditor()?.deleteSelected();
+  syncRegulationItemFieldsFromDom();
+});
+nodes.regulationClearAnnotations?.addEventListener("click", () => {
+  if (!confirm("Очистить всю разметку на этом фото?")) return;
+  initRegulationCanvasEditor()?.setAnnotations([]);
+  syncRegulationItemFieldsFromDom();
+});
+nodes.regulationCloseAnnotation?.addEventListener("click", () => closeRegulationImageEditor());
 
 nodes.newPackaging?.addEventListener("click", () => {
   state.selectedPackagingId = null;
