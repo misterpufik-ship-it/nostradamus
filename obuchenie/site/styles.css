@@ -1794,6 +1794,55 @@ h1, h2, h3,
   font-size: 15px;
 }
 
+.packaging-barcodes {
+  min-width: 140px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--soft);
+  padding: 6px 10px;
+}
+
+.packaging-barcodes summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 700;
+  user-select: none;
+}
+
+.packaging-barcodes summary::-webkit-details-marker {
+  display: none;
+}
+
+.packaging-barcodes summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.packaging-barcodes[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.packaging-barcodes-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.packaging-barcodes-list code {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  word-break: break-all;
+}
+
 .packaging-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

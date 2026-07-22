@@ -910,11 +910,11 @@ function renderPackagingList(items) {
     .map((item) => {
       const active = item.id === state.selectedPackagingId ? " is-active" : "";
       const articles = [].concat(item.articles || item.article || []).filter(Boolean);
-      const barcodes = [].concat(item.barcodes || item.barcode || []).filter(Boolean);
       const sizeBits = [item.length, item.width, item.height].filter(Boolean);
       const sizeLabel = sizeBits.length ? `${sizeBits.join("×")} см` : "";
       const volumeLabel = item.volume ? `${item.volume} л` : "";
-      const meta = [item.packagingType, articles[0], barcodes[0], sizeLabel, volumeLabel].filter(Boolean).join(" · ") || item.id;
+      // Баркоды в списке не показываем — место экономят; поиск по ним всё равно работает.
+      const meta = [item.packagingType, articles[0], sizeLabel, volumeLabel].filter(Boolean).join(" · ") || item.id;
       return `<button class="material-card${active}" type="button" data-packaging="${item.id}">
         <strong>${escapeHtml(item.name)}</strong>
         <small>${escapeHtml(meta)}</small>
@@ -953,11 +953,6 @@ function renderPackagingPage() {
       `<span><small>Артикул${articles.length > 1 ? "ы" : ""}</small><strong>${escapeHtml(articles.join(", "))}</strong></span>`
     );
   }
-  if (barcodes.length) {
-    metaParts.push(
-      `<span><small>Баркод${barcodes.length > 1 ? "ы" : ""}</small><strong>${escapeHtml(barcodes.join(", "))}</strong></span>`
-    );
-  }
   const sizeBits = [item.length, item.width, item.height].filter(Boolean);
   if (sizeBits.length) {
     metaParts.push(
@@ -966,6 +961,17 @@ function renderPackagingPage() {
   }
   if (item.volume) {
     metaParts.push(`<span><small>Объём</small><strong>${escapeHtml(String(item.volume))} л</strong></span>`);
+  }
+  if (barcodes.length) {
+    const label = barcodes.length === 1 ? "Баркод" : `Баркоды (${barcodes.length})`;
+    metaParts.push(
+      `<details class="packaging-barcodes">
+        <summary>${escapeHtml(label)}</summary>
+        <div class="packaging-barcodes-list">${barcodes
+          .map((code) => `<code>${escapeHtml(code)}</code>`)
+          .join("")}</div>
+      </details>`
+    );
   }
   if (nodes.packagingPageMeta) nodes.packagingPageMeta.innerHTML = metaParts.join("");
 
