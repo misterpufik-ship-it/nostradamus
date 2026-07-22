@@ -8,13 +8,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from . import storage
+from . import paths, storage
 
 ROOT = Path(__file__).resolve().parent
-SITE_ROOT = ROOT.parent / "site"
-DRAFTS_FILE = ROOT / "regulation-drafts.json"
-PUBLISHED_FILE = SITE_ROOT / "published-regulations.json"
-ASSETS_DIR = SITE_ROOT / "assets" / "regulations"
+SITE_ROOT = paths.site_data_root()
+DRAFTS_FILE = paths.regulation_drafts_file()
+PUBLISHED_FILE = paths.published_regulations_file()
+ASSETS_DIR = paths.regulation_assets_dir()
 _IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
 
 

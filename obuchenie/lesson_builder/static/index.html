@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,550;7..72,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="static/builder.css?v=20260721ikko" />
+    <link rel="stylesheet" href="static/builder.css?v=20260722persist" />
   </head>
   <body>
     <div class="app" id="app-shell">
@@ -324,6 +324,18 @@
                     <option value="">Тип упаковки</option>
                   </select>
                 </label>
+                <div class="span-3 packaging-dimensions">
+                  <div class="panel-head packaging-photos-head">
+                    <h2>Размеры</h2>
+                  </div>
+                  <div class="packaging-dimensions-grid">
+                    <label>Длина, см<input id="packaging-length" type="text" inputmode="decimal" placeholder="например 30" /></label>
+                    <label>Ширина, см<input id="packaging-width" type="text" inputmode="decimal" placeholder="например 20" /></label>
+                    <label>Высота, см<input id="packaging-height" type="text" inputmode="decimal" placeholder="например 15" /></label>
+                    <label>Объём, л<input id="packaging-volume" type="text" inputmode="decimal" placeholder="авто или вручную" /></label>
+                  </div>
+                  <p class="hint-inline">Если заполнены длина, ширина и высота, объём можно посчитать автоматически при сохранении (см³ → литры).</p>
+                </div>
                 <div class="span-3 packaging-multi-field">
                   <div class="panel-head packaging-photos-head">
                     <h2>Артикулы</h2>
@@ -430,6 +442,6 @@
     </div>
 
     <script src="static/canvas-editor.js?v=20260720c"></script>
-    <script src="static/builder.js?v=20260721a"></script>
+    <script src="static/builder.js?v=20260722persist"></script>
   </body>
 </html>

@@ -6,13 +6,17 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from . import paths
+
 OBUCHENIE_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = OBUCHENIE_ROOT.parent
-SITE_DIR = OBUCHENIE_ROOT / "site"
+SITE_DIR = paths.repo_site_root()
 SITE_GIT_PREFIX = SITE_DIR.relative_to(REPO_ROOT).as_posix()
 DEPLOY_ENV = Path("/srv/deploy/projects/x-active-obuchenie/deploy.env")
 DEPLOY_BIN = Path("/srv/deploy/bin/deploy-site")
 DEPLOY_PROJECT = "x-active-obuchenie"
+
+SITE_SHELL_FILES = ["app.js", "index.html", "styles.css"]
 
 
 def _run(command: list[str], cwd: Path | None = None, timeout: int = 300) -> subprocess.CompletedProcess[str]:
@@ -49,6 +53,21 @@ def _ensure_remote_dirs(remote: str, hosting_path: str, relative_files: list[Pat
         _run(["ssh", remote, f"mkdir -p '{folder}'"], timeout=60)
 
 
+def _allowed_roots() -> list[Path]:
+    return [paths.site_data_root().resolve(), paths.repo_site_root().resolve()]
+
+
+def _is_under_allowed(path: Path) -> bool:
+    resolved = path.resolve()
+    for root in _allowed_roots():
+        try:
+            resolved.relative_to(root)
+            return True
+        except ValueError:
+            continue
+    return False
+
+
 def _rsync_publish_files(env: dict[str, str], files: list[Path]) -> subprocess.CompletedProcess[str]:
     hosting_user = env.get("HOSTING_USER", "")
     hosting_host = env.get("HOSTING_HOST", "")
@@ -61,7 +80,7 @@ def _rsync_publish_files(env: dict[str, str], files: list[Path]) -> subprocess.C
     if not existing:
         raise RuntimeError("Нет файлов для отправки на хостинг.")
 
-    relative = [path.relative_to(SITE_DIR) for path in existing]
+    relative = [paths.site_rel_for(path) for path in existing]
     _ensure_remote_dirs(remote, hosting_path, relative)
 
     last = subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="")
@@ -74,6 +93,9 @@ def _rsync_publish_files(env: dict[str, str], files: list[Path]) -> subprocess.C
 
 
 def _try_git_sync(material_id: str, paths_to_add: list[str]) -> str | None:
+    if not paths_to_add:
+        return None
+
     _run(["git", "add", *paths_to_add], REPO_ROOT)
 
     status = _run(["git", "status", "--porcelain", f"{SITE_GIT_PREFIX}/"], REPO_ROOT)
@@ -93,24 +115,22 @@ def _try_git_sync(material_id: str, paths_to_add: list[str]) -> str | None:
     return None
 
 
-SITE_SHELL_FILES = ["app.js", "index.html", "styles.css", "published-lessons.json"]
-
-
 def auto_deploy(material_id: str, deploy_files: list[str] | None = None) -> dict[str, Any]:
     url = f"https://nostradamus-1503.ru/obuchenie/?lesson={material_id}"
 
-    if not SITE_DIR.is_dir():
+    if not SITE_DIR.is_dir() and not paths.site_data_root().is_dir():
         return {"deployed": False, "message": "Папка site/ не найдена.", "url": url}
 
     rel_paths = list(deploy_files or ["published-lessons.json"])
     for shell_file in SITE_SHELL_FILES:
         if shell_file not in rel_paths:
             rel_paths.append(shell_file)
-    abs_files = [(SITE_DIR / rel).resolve() for rel in rel_paths]
-    abs_files = [path for path in abs_files if path.is_file() and str(path).startswith(str(SITE_DIR.resolve()))]
 
-    if not abs_files and (SITE_DIR / "published-lessons.json").is_file():
-        abs_files = [SITE_DIR / "published-lessons.json"]
+    abs_files = [paths.resolve_site_file(rel) for rel in rel_paths]
+    abs_files = [path for path in abs_files if path.is_file() and _is_under_allowed(path)]
+
+    if not abs_files and paths.published_lessons_file().is_file():
+        abs_files = [paths.published_lessons_file()]
 
     env = _load_deploy_env()
     if env:
@@ -129,7 +149,13 @@ def auto_deploy(material_id: str, deploy_files: list[str] | None = None) -> dict
                 }
             return {"deployed": False, "message": f"Ошибка отправки на хостинг: {tail}", "url": url}
 
-        git_paths = [f"{SITE_GIT_PREFIX}/{path.relative_to(SITE_DIR).as_posix()}" for path in abs_files]
+        git_paths: list[str] = []
+        for path in abs_files:
+            try:
+                rel = path.resolve().relative_to(paths.repo_site_root().resolve())
+            except ValueError:
+                continue
+            git_paths.append(f"{SITE_GIT_PREFIX}/{rel.as_posix()}")
         git_note = _try_git_sync(material_id, git_paths)
         message = "Урок опубликован и обновлён на сайте."
         if git_note:

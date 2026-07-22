@@ -12,12 +12,28 @@ from pathlib import Path
 
 from flask import Flask, jsonify, redirect, request, send_file, send_from_directory, session
 
-from . import auth, export, packaging, pipeline, publish, regulations, storage
+from . import auth, export, packaging, paths, pipeline, publish, regulations, storage
 from .deploy_site import auto_deploy
 from .ffmpeg_util import find_binary
 
 ROOT = Path(__file__).resolve().parent
 STATIC = ROOT / "static"
+
+paths.ensure_runtime_files()
+storage.PROJECTS_DIR = paths.projects_dir()
+publish.SITE_ROOT = paths.site_data_root()
+publish.PUBLISHED_FILE = paths.published_lessons_file()
+publish.ASSETS_DIR = paths.lesson_assets_dir()
+publish.VIDEOS_DIR = paths.videos_dir()
+regulations.SITE_ROOT = paths.site_data_root()
+regulations.DRAFTS_FILE = paths.regulation_drafts_file()
+regulations.PUBLISHED_FILE = paths.published_regulations_file()
+regulations.ASSETS_DIR = paths.regulation_assets_dir()
+packaging.SITE_ROOT = paths.site_data_root()
+packaging.DRAFTS_FILE = paths.packaging_drafts_file()
+packaging.PUBLISHED_FILE = paths.published_packaging_file()
+packaging.TYPES_FILE = paths.packaging_types_file()
+packaging.ASSETS_DIR = paths.packaging_assets_dir()
 
 app = Flask(__name__, static_folder=str(STATIC), static_url_path="/static")
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 1024  # 1 GB
@@ -1016,6 +1032,8 @@ def api_export_snippet(project_id: str):
 
 
 def main() -> None:
+    paths.ensure_runtime_files()
+    storage.PROJECTS_DIR = paths.projects_dir()
     storage.PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
     print("Разработка урока: http://127.0.0.1:8765")
     app.run(host="127.0.0.1", port=8765, debug=False, threaded=True)

@@ -12,16 +12,22 @@ BACKUP_PATH=/home/m/mrpuffch/deploy_backups/x-active-obuchenie
 
 SOURCE_DIR=obuchenie/site
 DELETE_REMOTE=false
+RSYNC_EXCLUDES=published-lessons.json,published-regulations.json,published-packaging.json,assets/,videos/
 BUILD_COMMAND=/srv/deploy/projects/x-active-obuchenie/bin/rebuild-published.sh
 ENV
 
 cat > /srv/deploy/projects/x-active-obuchenie/bin/rebuild-published.sh <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
+export BUILDER_DATA_DIR=/srv/deploy/projects/x-active-obuchenie/data
+export BUILDER_USERS_FILE=/srv/deploy/projects/x-active-obuchenie/users.json
 cd /srv/deploy/projects/x-active-obuchenie/repo/obuchenie
 /srv/deploy/projects/x-active-obuchenie/venv/bin/python -m lesson_builder.rebuild_published
 SH
 chmod +x /srv/deploy/projects/x-active-obuchenie/bin/rebuild-published.sh
+
+# One-time migrate of live data out of the git tree
+bash /srv/deploy/projects/x-active-obuchenie/repo/deploy/persist-builder-data.sh || true
 
 REPO=/srv/deploy/projects/x-active-obuchenie/repo
 sudo -u deploy git -C "$REPO" remote set-url origin https://github.com/misterpufik-ship-it/nostradamus.git

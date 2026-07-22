@@ -8,14 +8,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from . import storage
+from . import paths, storage
 
 ROOT = Path(__file__).resolve().parent
-SITE_ROOT = ROOT.parent / "site"
-DRAFTS_FILE = ROOT / "packaging-drafts.json"
-PUBLISHED_FILE = SITE_ROOT / "published-packaging.json"
-TYPES_FILE = ROOT / "packaging-types.json"
-ASSETS_DIR = SITE_ROOT / "assets" / "packaging"
+SITE_ROOT = paths.site_data_root()
+DRAFTS_FILE = paths.packaging_drafts_file()
+PUBLISHED_FILE = paths.published_packaging_file()
+TYPES_FILE = paths.packaging_types_file()
+ASSETS_DIR = paths.packaging_assets_dir()
 _IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
 DEFAULT_PACKAGING_TYPES = [
     "Курьер пакет",
@@ -131,6 +131,38 @@ def _normalize_images(raw: Any) -> list[dict[str, str]]:
     return images
 
 
+def _normalize_dimension_value(value: Any) -> str:
+    text = str(value or "").strip().replace(",", ".")
+    if not text:
+        return ""
+    return text[:40]
+
+
+def _normalize_dimensions(payload: dict[str, Any]) -> dict[str, str]:
+    length = _normalize_dimension_value(payload.get("length") or payload.get("lengthCm"))
+    width = _normalize_dimension_value(payload.get("width") or payload.get("widthCm"))
+    height = _normalize_dimension_value(payload.get("height") or payload.get("heightCm"))
+    volume = _normalize_dimension_value(payload.get("volume") or payload.get("volumeL"))
+
+    if not volume and length and width and height:
+        try:
+            l_cm = float("".join(ch for ch in length if ch.isdigit() or ch == "."))
+            w_cm = float("".join(ch for ch in width if ch.isdigit() or ch == "."))
+            h_cm = float("".join(ch for ch in height if ch.isdigit() or ch == "."))
+            liters = (l_cm * w_cm * h_cm) / 1000.0
+            if liters > 0:
+                volume = f"{liters:.3f}".rstrip("0").rstrip(".")
+        except ValueError:
+            pass
+
+    return {
+        "length": length,
+        "width": width,
+        "height": height,
+        "volume": volume,
+    }
+
+
 def _normalize_item(payload: dict[str, Any], *, existing_id: str = "") -> dict[str, Any]:
     name = str(payload.get("name") or payload.get("title") or "").strip()
     if not name:
@@ -148,6 +180,7 @@ def _normalize_item(payload: dict[str, Any], *, existing_id: str = "") -> dict[s
 
     articles = _normalize_string_list(payload.get("articles"), legacy=payload.get("article"))
     barcodes = _normalize_string_list(payload.get("barcodes"), legacy=payload.get("barcode"))
+    dimensions = _normalize_dimensions(payload)
 
     return {
         "id": item_id,
@@ -155,18 +188,27 @@ def _normalize_item(payload: dict[str, Any], *, existing_id: str = "") -> dict[s
         "packagingType": packaging_type,
         "articles": articles,
         "barcodes": barcodes,
+        "length": dimensions["length"],
+        "width": dimensions["width"],
+        "height": dimensions["height"],
+        "volume": dimensions["volume"],
         "text": str(payload.get("text") or "").strip(),
         "images": _normalize_images(payload.get("images")),
     }
 
 
 def _public_item(item: dict[str, Any]) -> dict[str, Any]:
+    dimensions = _normalize_dimensions(item)
     return {
         "id": item["id"],
         "name": item.get("name", ""),
         "packagingType": item.get("packagingType", ""),
         "articles": _normalize_string_list(item.get("articles"), legacy=item.get("article")),
         "barcodes": _normalize_string_list(item.get("barcodes"), legacy=item.get("barcode")),
+        "length": dimensions["length"],
+        "width": dimensions["width"],
+        "height": dimensions["height"],
+        "volume": dimensions["volume"],
         "text": item.get("text", ""),
         "images": _normalize_images(item.get("images")),
     }

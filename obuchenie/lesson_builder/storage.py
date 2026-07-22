@@ -9,9 +9,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from . import paths
+
 
 ROOT = Path(__file__).resolve().parent
-PROJECTS_DIR = ROOT / "projects"
+PROJECTS_DIR = paths.projects_dir()
 
 
 def _now() -> str:

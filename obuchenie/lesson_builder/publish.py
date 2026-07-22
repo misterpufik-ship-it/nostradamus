@@ -9,13 +9,13 @@ from typing import Any
 
 from PIL import Image
 
-from . import storage
+from . import paths, storage
 from .deploy_site import auto_deploy
 
-SITE_ROOT = Path(__file__).resolve().parents[1] / "site"
-PUBLISHED_FILE = SITE_ROOT / "published-lessons.json"
-ASSETS_DIR = SITE_ROOT / "assets"
-VIDEOS_DIR = SITE_ROOT / "videos"
+SITE_ROOT = paths.site_data_root()
+PUBLISHED_FILE = paths.published_lessons_file()
+ASSETS_DIR = paths.lesson_assets_dir()
+VIDEOS_DIR = paths.videos_dir()
 
 
 def _looks_mojibake(text: str) -> bool:

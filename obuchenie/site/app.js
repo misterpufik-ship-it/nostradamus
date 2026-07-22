@@ -241,6 +241,10 @@ function packagingText(item) {
     [
       item.name,
       item.packagingType,
+      item.length,
+      item.width,
+      item.height,
+      item.volume,
       ...articles,
       ...barcodes,
       item.text,
@@ -257,10 +261,12 @@ function scorePackaging(item, query) {
   const type = normalize(item.packagingType);
   const articles = normalize([].concat(item.articles || item.article || []).join(" "));
   const barcodes = normalize([].concat(item.barcodes || item.barcode || []).join(" "));
+  const sizes = normalize([item.length, item.width, item.height, item.volume].filter(Boolean).join(" "));
   return terms.reduce((score, term) => {
     if (name.includes(term)) return score + 4;
     if (type.includes(term)) return score + 3;
     if (articles.includes(term) || barcodes.includes(term)) return score + 3;
+    if (sizes.includes(term)) return score + 2;
     if (haystack.includes(term)) return score + 1;
     return score;
   }, 0);
@@ -905,7 +911,10 @@ function renderPackagingList(items) {
       const active = item.id === state.selectedPackagingId ? " is-active" : "";
       const articles = [].concat(item.articles || item.article || []).filter(Boolean);
       const barcodes = [].concat(item.barcodes || item.barcode || []).filter(Boolean);
-      const meta = [item.packagingType, articles[0], barcodes[0]].filter(Boolean).join(" · ") || item.id;
+      const sizeBits = [item.length, item.width, item.height].filter(Boolean);
+      const sizeLabel = sizeBits.length ? `${sizeBits.join("×")} см` : "";
+      const volumeLabel = item.volume ? `${item.volume} л` : "";
+      const meta = [item.packagingType, articles[0], barcodes[0], sizeLabel, volumeLabel].filter(Boolean).join(" · ") || item.id;
       return `<button class="material-card${active}" type="button" data-packaging="${item.id}">
         <strong>${escapeHtml(item.name)}</strong>
         <small>${escapeHtml(meta)}</small>
@@ -948,6 +957,15 @@ function renderPackagingPage() {
     metaParts.push(
       `<span><small>Баркод${barcodes.length > 1 ? "ы" : ""}</small><strong>${escapeHtml(barcodes.join(", "))}</strong></span>`
     );
+  }
+  const sizeBits = [item.length, item.width, item.height].filter(Boolean);
+  if (sizeBits.length) {
+    metaParts.push(
+      `<span><small>Размер (Д×Ш×В)</small><strong>${escapeHtml(sizeBits.join(" × "))} см</strong></span>`
+    );
+  }
+  if (item.volume) {
+    metaParts.push(`<span><small>Объём</small><strong>${escapeHtml(String(item.volume))} л</strong></span>`);
   }
   if (nodes.packagingPageMeta) nodes.packagingPageMeta.innerHTML = metaParts.join("");
 

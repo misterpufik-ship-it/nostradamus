@@ -9,6 +9,7 @@ WorkingDirectory=/srv/deploy/projects/x-active-obuchenie/repo/obuchenie
 Environment=PATH=/srv/deploy/projects/x-active-obuchenie/venv/bin:/usr/bin
 Environment=BUILDER_SECRET_KEY=CHANGE_ME_ON_SERVER
 Environment=BUILDER_USERS_FILE=/srv/deploy/projects/x-active-obuchenie/users.json
+Environment=BUILDER_DATA_DIR=/srv/deploy/projects/x-active-obuchenie/data
 ExecStart=/srv/deploy/projects/x-active-obuchenie/venv/bin/gunicorn --bind 127.0.0.1:8765 --workers 1 --threads 4 --timeout 600 lesson_builder.server:app
 Restart=on-failure
 RestartSec=5

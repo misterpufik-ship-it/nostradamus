@@ -147,6 +147,10 @@ const nodes = {
   packagingId: document.querySelector("#packaging-id"),
   packagingName: document.querySelector("#packaging-name"),
   packagingType: document.querySelector("#packaging-type"),
+  packagingLength: document.querySelector("#packaging-length"),
+  packagingWidth: document.querySelector("#packaging-width"),
+  packagingHeight: document.querySelector("#packaging-height"),
+  packagingVolume: document.querySelector("#packaging-volume"),
   packagingArticlesList: document.querySelector("#packaging-articles-list"),
   packagingBarcodesList: document.querySelector("#packaging-barcodes-list"),
   packagingTypesList: document.querySelector("#packaging-types-list"),
@@ -1522,6 +1526,10 @@ function fillPackagingForm(item) {
   nodes.packagingId.value = item?.id || "";
   nodes.packagingName.value = item?.name || "";
   renderPackagingTypeSelect(item?.packagingType || "");
+  if (nodes.packagingLength) nodes.packagingLength.value = item?.length || "";
+  if (nodes.packagingWidth) nodes.packagingWidth.value = item?.width || "";
+  if (nodes.packagingHeight) nodes.packagingHeight.value = item?.height || "";
+  if (nodes.packagingVolume) nodes.packagingVolume.value = item?.volume || "";
   state.packagingArticles = normalizePackagingValues(item?.articles, item?.article);
   state.packagingBarcodes = normalizePackagingValues(item?.barcodes, item?.barcode);
   renderMultiList(nodes.packagingArticlesList, state.packagingArticles, "ART-12345");
@@ -1565,7 +1573,10 @@ function renderPackagingWorkspace() {
       const status = item.status === "published" ? "опубликован" : "черновик";
       const articles = normalizePackagingValues(item.articles, item.article).filter(Boolean);
       const barcodes = normalizePackagingValues(item.barcodes, item.barcode).filter(Boolean);
-      const meta = [item.packagingType, articles[0], barcodes[0]].filter(Boolean).join(" · ") || item.id;
+      const sizeBits = [item.length, item.width, item.height].filter(Boolean);
+      const sizeLabel = sizeBits.length ? `${sizeBits.join("×")} см` : "";
+      const volumeLabel = item.volume ? `${item.volume} л` : "";
+      const meta = [item.packagingType, articles[0], barcodes[0], sizeLabel, volumeLabel].filter(Boolean).join(" · ") || item.id;
       return `<button class="regulation-card-btn${active}" type="button" data-packaging="${escapeHtml(item.id)}">
         <strong>${escapeHtml(item.name)}</strong>
         <span>${escapeHtml(meta)} · ${status}</span>
@@ -1604,6 +1615,10 @@ function collectPackagingPayload() {
     id: nodes.packagingId.value.trim(),
     name: nodes.packagingName.value.trim(),
     packagingType,
+    length: nodes.packagingLength?.value.trim() || "",
+    width: nodes.packagingWidth?.value.trim() || "",
+    height: nodes.packagingHeight?.value.trim() || "",
+    volume: nodes.packagingVolume?.value.trim() || "",
     articles: readMultiList(nodes.packagingArticlesList),
     barcodes: readMultiList(nodes.packagingBarcodesList),
     text: getRichHtml(nodes.packagingText),
